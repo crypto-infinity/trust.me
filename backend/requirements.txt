@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+langchain
+openai
+bs4
+requests
+pydantic
+python-dotenv
+langchain_community
+langchain_openai
+google-search-results
