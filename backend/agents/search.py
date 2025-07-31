@@ -1,5 +1,9 @@
 from langchain.agents import Tool
 from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.embeddings import AzureOpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import os
 
 class SearchAgent:
     def __init__(self):
@@ -8,8 +12,35 @@ class SearchAgent:
             func=SerpAPIWrapper().run,
             description="Cerca informazioni pubbliche su persone o aziende tramite SerpAPI."
         )
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
+        self.embeddings = AzureOpenAIEmbeddings(
+            azure_deployment=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "text-embedding-3-large"),
+            model="text-embedding-3-large",
+            openai_api_version="2023-05-15",
+            chunk_size=2048
+        )
 
     async def run(self, subject: str, subject_type: str):
-        # Puoi arricchire la query in base al tipo
         query = f"{subject} {subject_type} social profile linkedin crunchbase"
-        return self.tool.run(query)
+        results = self.tool.run(query)
+        # Estrai i testi dai risultati SerpAPI (assumendo formato stringa o lista di dict)
+        texts = []
+        if isinstance(results, str):
+            texts.append(results)
+        elif isinstance(results, list):
+            for r in results:
+                if isinstance(r, dict):
+                    texts.append(r.get('snippet', '') or r.get('text', ''))
+                elif isinstance(r, str):
+                    texts.append(r)
+        # Split in chunk
+        all_chunks = []
+        for t in texts:
+            all_chunks.extend(self.text_splitter.split_text(t))
+        if not all_chunks:
+            return []
+        # Similarità coseno con la query
+        db = FAISS.from_texts(all_chunks, self.embeddings)
+        docs_and_scores = db.similarity_search_with_score(query, k=3)
+        # Restituisci i chunk più rilevanti
+        return [doc.page_content for doc, score in docs_and_scores]

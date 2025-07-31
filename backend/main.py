@@ -1,11 +1,9 @@
-
 from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from agents.search import SearchAgent
-from agents.scraper import ScraperAgent
 from agents.verifier import VerifierAgent
 from agents.trust_scorer import TrustScorerAgent
 from agents.human_check import HumanCheckAgent
@@ -38,15 +36,13 @@ class AnalysisResponse(BaseModel):
 async def analyze(request: AnalysisRequest):
     # 1. Ricerca profili pubblici
     search_results = await SearchAgent().run(request.subject, request.type)
-    # 2. Scraping dati
-    scraped_data = await ScraperAgent().run(search_results)
-    # 3. Verifica e validazione
-    verified_data = await VerifierAgent().run(scraped_data)
-    # 4. Calcolo score
+    # 2. Verifica e validazione (usa direttamente i risultati della ricerca)
+    verified_data = await VerifierAgent().run(search_results)
+    # 3. Calcolo score
     score, details = await TrustScorerAgent().run(verified_data)
-    # 5. Check umano (opzionale)
+    # 4. Check umano (opzionale)
     checked_data = await HumanCheckAgent().run(verified_data)
-    # 6. Generazione report
+    # 5. Generazione report
     report = await ReportAgent().run(checked_data, score, details)
     return AnalysisResponse(trust_score=score, report=report, details=details)
 
