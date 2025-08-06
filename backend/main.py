@@ -61,7 +61,7 @@ async def analyze(request: AnalysisRequest):
             log_step('scraped_data', search_results)
 
             # 3 Verification through automatic info validation
-            checked_data = await VerifierAgent().run(search_results)
+            checked_data = await VerifierAgent().run(scraped_data)
             log_step('verified_data', checked_data)
 
             if(checked_data['verified'] == "OK"): 
