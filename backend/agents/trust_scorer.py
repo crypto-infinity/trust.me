@@ -14,11 +14,14 @@ class TrustScorerAgent:
             temperature=0.1
         )
 
-    async def run(self, verified_data):
+    async def run(self, verified_data_log):
 
         prompt = (
-            "Sulla base di queste informazioni verificate, assegna uno score di fiducia (0-100) e spiega le motivazioni.\n"
-            f"{verified_data['data']}\n"
+            "Sulla base di queste informazioni verificate in formato JSON, assegna uno score di fiducia (0-100) e spiega le motivazioni.\n"
+            "Struttura delle informazioni JSON:"
+            #TO-DO: build json example for LLM
+            "Input:"
+            f"{verified_data_log}\n"
             "Rispondi SOLO con un oggetto JSON valido, senza testo extra, senza virgola finale dopo l'ultimo campo.\n"
             "Esempio: {\"score\": 85, \"details\": \"Motivazione qui\"}"
         )
