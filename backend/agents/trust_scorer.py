@@ -7,7 +7,7 @@ from langchain_openai import AzureChatOpenAI
 class TrustScorerAgent:
     def __init__(self):
         self.llm = AzureChatOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # type: ignore
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
             model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
@@ -16,17 +16,31 @@ class TrustScorerAgent:
 
     async def run(self, verified_data_log):
 
-        prompt = (
-            "Sulla base di queste informazioni verificate in formato JSON, assegna uno score di fiducia (0-100) e spiega le motivazioni.\n"
-            "Struttura delle informazioni JSON:"
-            #TO-DO: build json example for LLM
-            "Input:"
-            f"{verified_data_log}\n"
-            "Rispondi SOLO con un oggetto JSON valido, senza testo extra, senza virgola finale dopo l'ultimo campo.\n"
-            "Esempio: {\"score\": 85, \"details\": \"Motivazione qui\"}"
-        )
+        prompt = """
+            Sulla base di queste informazioni e dei commenti del verifier agent (whys) in formato JSON, assegna uno score di fiducia (0-100) e spiega le motivazioni.
+
+            Esempio di formattazione JSON di input:
+            {{
+            "searches": [
+                "testo ricerca 1",
+                "testo ricerca 2"
+            ],
+            "whys": [
+                "commento sulla ricerca 1",
+                "commento sulla ricerca 2"
+            ]
+            }}
+
+            Input:
+            {verified_data_log}
+
+            Rispondi con un oggetto JSON valido, senza testo extra, senza virgola finale dopo l'ultimo campo.
+            Esempio di output: {{"score": 85, "details": "Motivazione qui"}}
+            """.format(verified_data_log = verified_data_log)
+        
         result = self.llm.invoke(prompt)
         content = getattr(result, 'content', str(result))
+        
         # Prova parsing diretto
         try:
             parsed = json.loads(content)
@@ -43,6 +57,7 @@ class TrustScorerAgent:
                     return parsed.get('score', 50.0), parsed.get('details', {'error': 'Dettagli non trovati'})
             except Exception:
                 pass
+
             # Fallback: estrai score e details con regex multilinea e usali SEMPRE per il report
             score_match = re.search(r'"score"\s*:\s*([0-9]+\.?[0-9]*)', content)
             details_match = re.search(r'"details"\s*:\s*"([\s\S]*?)"\s*[\}\n]', content)
