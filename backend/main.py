@@ -46,35 +46,46 @@ async def analyze(request: AnalysisRequest):
     verification_log['whys'] = []
     verification_log['searches'] = []
 
-    while(not checked):
+    try:
 
-        search_results = ""
+        while(not checked):
 
-        # 1. Ricerca profili pubblici
-        search_results = await SearchAgent().run(request.subject, request.type, request.context, new_suggested_query)
+            search_results = ""
 
-        log_step('search_results', search_results)
+            # 1 OSINT info
+            search_results = await SearchAgent().run(request.subject, request.context, new_suggested_query)
+            log_step('search_results', search_results)
 
-        # Verifica la correttezza dei risultati di SearchAgent
-        checked_data = await VerifierAgent().run(search_results)
-        log_step('verified_data', checked_data)
+            # 2 Web Scraping
+            scraped_data = await ScraperAgent().run(search_results)
+            log_step('scraped_data', search_results)
 
-        if(checked_data['verified'] == "OK"): 
-            checked = True
-            if checked_data['data'] == "" or checked_data['data'] == None: checked_data['data'] = str(search_results)
-        else:
-            #in-progress: append all results during validation phase
-            
-            verification_log['searches'].append(checked_data['data'])#testare
-            verification_log['whys'].append(checked_data['error_details']['whys'])
+            # 3 Verification through automatic info validation
+            checked_data = await VerifierAgent().run(search_results)
+            log_step('verified_data', checked_data)
 
-            new_suggested_query = checked_data['error_details']['suggested_retry']
+            if(checked_data['verified'] == "OK"): 
+                checked = True
+                if checked_data['data'] == "" or checked_data['data'] == None: checked_data['data'] = str(search_results)
+            else:
+                #in-progress: append all results during validation phase
+                
+                verification_log['searches'].append(checked_data['data'])#testare
+                verification_log['whys'].append(checked_data['error_details']['whys'])
+
+                new_suggested_query = checked_data['error_details']['suggested_retry']
+        
+        # 4. Calcolo score
+        score, details = await TrustScorerAgent().run(str(verification_log)) #modificare e testare
+        details = {'comment': details}
+        log_step('score', score)
+        log_step('details', details)
     
-    # 4. Calcolo score
-    score, details = await TrustScorerAgent().run(str(verification_log)) #modificare e testare
-    details = {'comment': details}
-    log_step('score', score)
-    log_step('details', details)
+    except IOError as ioerr:
+        print(ioerr)
+
+    except Exception as e:
+        print(e)
 
     # 5. Generazione report
     report = f"""# Trust.me Report\n\n**Score di fiducia:** {score}/100\n\n## Dettagli\n{details}\n\n---\n\n## Dati analizzati\n{checked_data}\n"""
