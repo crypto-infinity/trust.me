@@ -25,9 +25,9 @@ app.add_middleware(
 )
 
 class AnalysisRequest(BaseModel):
-    subject: str
+    subject: str # Person or company name
     type: str  # "person" | "company"
-    context: Optional[str] = None
+    context: str # "search context"
 
 class AnalysisResponse(BaseModel):
     trust_score: float
@@ -37,17 +37,41 @@ class AnalysisResponse(BaseModel):
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
 
-    # 1. Ricerca profili pubblici
-    search_results = await SearchAgent().run(request.subject, request.type)
-    log_step('search_results', search_results)
-    log_step('text_chunks', search_results)
+    checked = False
+    new_suggested_query = "social profile linkedin crunchbase"
+    checked_data = None
 
-    # Verifica la correttezza dei risultati di SearchAgent
-    checked_data = verified_data = await VerifierAgent().run(search_results)
-    log_step('verified_data', verified_data)
+    #Verification log
+    verification_log = {}
+    verification_log['whys'] = []
+    verification_log['searches'] = []
 
+    while(not checked):
+
+        search_results = ""
+
+        # 1. Ricerca profili pubblici
+        search_results = await SearchAgent().run(request.subject, request.type, request.context, new_suggested_query)
+
+        log_step('search_results', search_results)
+
+        # Verifica la correttezza dei risultati di SearchAgent
+        checked_data = await VerifierAgent().run(search_results)
+        log_step('verified_data', checked_data)
+
+        if(checked_data['verified'] == "OK"): 
+            checked = True
+            if checked_data['data'] == "" or checked_data['data'] == None: checked_data['data'] = str(search_results)
+        else:
+            #in-progress: append all results during validation phase
+            
+            verification_log['searches'].append(checked_data['data'])#testare
+            verification_log['whys'].append(checked_data['error_details']['whys'])
+
+            new_suggested_query = checked_data['error_details']['suggested_retry']
+    
     # 4. Calcolo score
-    score, details = await TrustScorerAgent().run(verified_data)
+    score, details = await TrustScorerAgent().run(str(verification_log)) #modificare e testare
     details = {'comment': details}
     log_step('score', score)
     log_step('details', details)

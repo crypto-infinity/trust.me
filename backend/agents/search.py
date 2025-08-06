@@ -1,27 +1,18 @@
 from langchain.agents import Tool
 from langchain_community.utilities.serpapi import SerpAPIWrapper
-from langchain_openai import AzureOpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-import os
 
 class SearchAgent:
     def __init__(self):
-        self.tool = Tool(
+        self.search_tool = Tool(
             name="search",
             func=SerpAPIWrapper().run,
             description="Cerca informazioni pubbliche su persone o aziende tramite SerpAPI."
         )
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
-        self.embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
-            model=os.environ.get("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-3-large"),
-            chunk_size=2048
-        )
 
-    async def run(self, subject: str, subject_type: str):
-        query = f"{subject} {subject_type} social profile linkedin crunchbase"
-        results = self.tool.run(query)
+    async def run(self, subject: str, subject_type: str, context: str, query_suffix: str):
+        query = f"{subject} {subject_type} {context} {query_suffix}"
+        results = self.search_tool.run(query)
+
         # Estrai i testi dai risultati SerpAPI (assumendo formato stringa o lista di dict)
         texts = []
         if isinstance(results, str):
@@ -32,9 +23,11 @@ class SearchAgent:
                     texts.append(r.get('snippet', '') or r.get('text', ''))
                 elif isinstance(r, str):
                     texts.append(r)
-        # Split in chunk
-        all_chunks = []
+
+        # Suddividi i testi in frasi complete usando il punto
+        phrases = []
         for t in texts:
-            all_chunks.extend(self.text_splitter.split_text(t))
-        # Restituisci tutti i chunk senza ranking
-        return all_chunks if all_chunks else texts
+            phrases.extend([f.strip() for f in t.split('. ') if len(f.strip()) > 20])
+
+        # Restituisci solo frasi non vuote
+        return phrases if phrases else texts
