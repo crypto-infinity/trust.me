@@ -12,8 +12,18 @@ from agents.scraper import ScraperAgent
 from pydantic import BaseModel
 from typing import List, Optional
 import datetime
+from collections import defaultdict
 
 app = FastAPI(title="Trust.me - Backend API")
+
+# Google search
+params = {
+    "location": "United States",
+    "device": "desktop",
+    "hl": "en",
+    "gl": "us",
+    "num": 10
+}
 
 # CORS setup (modifica origins in base al frontend)
 app.add_middleware(
@@ -37,14 +47,17 @@ class AnalysisResponse(BaseModel):
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
 
+    #Variables setup
     checked = False
-    new_suggested_query = "social profile linkedin crunchbase"
+    query = ""
     checked_data = None
+    score = 0
+    details = None
 
     #Verification log
-    verification_log = {}
-    verification_log['whys'] = []
+    verification_log = defaultdict(list)
     verification_log['searches'] = []
+    verification_log['whys'] = []
 
     try:
 
@@ -53,36 +66,45 @@ async def analyze(request: AnalysisRequest):
             search_results = ""
 
             # 1 OSINT info
-            search_results = await SearchAgent().run(request.subject, request.context, new_suggested_query)
+            search_results = await SearchAgent().run(
+                request.subject, 
+                request.context, 
+                query, 
+                params
+            )
             log_step('search_results', search_results)
 
             # 2 Web Scraping
-            scraped_data = await ScraperAgent().run(search_results)
-            log_step('scraped_data', search_results)
+            scraped_data = await ScraperAgent().run(
+                search_results,
+                request.subject + request.context + query #for similarity search
+            )
 
-            # 3 Verification through automatic info validation
+            log_step('scraped_data', scraped_data)
+
+            # 3 Verification through automatic validation
             checked_data = await VerifierAgent().run(scraped_data)
             log_step('verified_data', checked_data)
 
+            # Check if info are validated, otherwise append motivations
             if(checked_data['verified'] == "OK"): 
                 checked = True
-                if checked_data['data'] == "" or checked_data['data'] == None: checked_data['data'] = str(search_results)
+                verification_log["searches"].append(checked_data['data'])
             else:
-                #in-progress: append all results during validation phase
-                
-                verification_log['searches'].append(checked_data['data'])#testare
+                verification_log['searches'].append(checked_data['data'])
                 verification_log['whys'].append(checked_data['error_details']['whys'])
 
-                new_suggested_query = checked_data['error_details']['suggested_retry']
+                query = checked_data['error_details']['suggested_retry']
         
         # 4. Calcolo score
-        score, details = await TrustScorerAgent().run(str(verification_log)) #modificare e testare
+        score, details = await TrustScorerAgent().run(str(verification_log))
+
         details = {'comment': details}
         log_step('score', score)
         log_step('details', details)
     
-    except IOError as ioerr:
-        print(ioerr)
+    except HTTPException as httpexc:
+        print(httpexc)
 
     except Exception as e:
         print(e)
@@ -91,7 +113,7 @@ async def analyze(request: AnalysisRequest):
     report = f"""# Trust.me Report\n\n**Score di fiducia:** {score}/100\n\n## Dettagli\n{details}\n\n---\n\n## Dati analizzati\n{checked_data}\n"""
     log_step('report', report)
 
-    return AnalysisResponse(trust_score=score, report=report, details=details)
+    return AnalysisResponse(trust_score=score, report=report, details=details or {})
 
 @app.get("/health")
 def health():

@@ -17,7 +17,8 @@ class TrustScorerAgent:
     async def run(self, verified_data_log):
 
         prompt = """
-            Sulla base di queste informazioni e dei commenti del verifier agent (whys) in formato JSON, assegna uno score di fiducia (0-100) e spiega le motivazioni.
+            Usa le ricerche (searches) e i commenti del verifier agent (whys) in formato JSON 
+            per assegnare uno score di fiducia (0-100) e spiega le motivazioni.
 
             Esempio di formattazione JSON di input:
             {{
@@ -33,9 +34,8 @@ class TrustScorerAgent:
 
             Input:
             {verified_data_log}
-
-            Rispondi con un oggetto JSON valido, senza testo extra, senza virgola finale dopo l'ultimo campo.
-            Esempio di output: {{"score": 85, "details": "Motivazione qui"}}
+.
+            Esempio di output JSON valido: {{"score": 85, "details": "Motivazione qui"}}
             """.format(verified_data_log = verified_data_log)
         
         result = self.llm.invoke(prompt)
