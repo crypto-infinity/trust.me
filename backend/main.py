@@ -7,10 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from agents.search import SearchAgent
 from agents.verifier import VerifierAgent
 from agents.trust_scorer import TrustScorerAgent
-from agents.human_check import HumanCheckAgent
 from agents.scraper import ScraperAgent
 from pydantic import BaseModel
-from typing import List, Optional
 import datetime
 from collections import defaultdict
 
@@ -105,12 +103,18 @@ async def analyze(request: AnalysisRequest):
     
     except HTTPException as httpexc:
         print(httpexc)
+        return HTTPException(status_code=500, detail=httpexc)
 
     except Exception as e:
         print(e)
+        return HTTPException(status_code=500, detail=e)
 
     # 5. Generazione report
-    report = f"""# Trust.me Report\n\n**Score di fiducia:** {score}/100\n\n## Dettagli\n{details}\n\n---\n\n## Dati analizzati\n{checked_data}\n"""
+    report = f"""# Trust.me Report\n\n
+            **Trust Score:** {score}/100\n\n## 
+            Details\n{details}\n\n---\n\n## 
+            Analyzed data\n{checked_data}\n"""
+    
     log_step('report', report)
 
     return AnalysisResponse(trust_score=score, report=report, details=details or {})
