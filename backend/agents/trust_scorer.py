@@ -11,32 +11,31 @@ class TrustScorerAgent:
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
             model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
-            temperature=0.1
+            temperature=0.2
         )
 
     async def run(self, verified_data_log):
 
         prompt = """
-            Usa le ricerche (searches) e i commenti del verifier agent (whys) in formato JSON 
-            per assegnare uno score di fiducia (0-100) e spiega le motivazioni.
+            Usa i risultati (searches) forniti in formato JSON per assegnare
+            uno score di fiducia (0-100), spiegandone le motivazioni.
 
-            Esempio di formattazione JSON di input:
+            Le motivazioni devono indicare un primo paragrafo esplicativo sul soggetto della richiesta,
+            per poi indicare i perchè è stato attribuito il dato score in maniera chiara ed esplicita.
+
+            Esempio di formattazione JSON dei risultati:
             {{
             "searches": [
                 "testo ricerca 1",
                 "testo ricerca 2"
-            ],
-            "whys": [
-                "commento sulla ricerca 1",
-                "commento sulla ricerca 2"
             ]
             }}
-
-            Input:
-            {verified_data_log}
 .
             Esempio di output JSON valido: {{"score": 85, "details": "Motivazione qui"}}
-            """.format(verified_data_log = verified_data_log)
+
+            Searches:
+            {verified_data_log}
+            """.format(verified_data_log = verified_data_log["searches"])
         
         result = self.llm.invoke(prompt)
         content = getattr(result, 'content', str(result))
@@ -61,7 +60,7 @@ class TrustScorerAgent:
             # Fallback: estrai score e details con regex multilinea e usali SEMPRE per il report
             score_match = re.search(r'"score"\s*:\s*([0-9]+\.?[0-9]*)', content)
             details_match = re.search(r'"details"\s*:\s*"([\s\S]*?)"\s*[\}\n]', content)
-            score = float(score_match.group(1)) if score_match else 50.0
-            details = details_match.group(1).strip() if details_match else 'Parsing LLM fallito'
+            score = float(score_match.group(1)) if score_match else None
+            details = details_match.group(1).strip() if details_match else None
 
             return score, details
