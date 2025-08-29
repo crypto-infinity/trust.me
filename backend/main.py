@@ -33,14 +33,12 @@ app.add_middleware(
 )
 
 class AnalysisRequest(BaseModel):
-    subject: str # Person or company name
-    type: str  # "person" | "company"
+    subject: str # Person or company name, mandatory
     context: str # "search context"
 
 class AnalysisResponse(BaseModel):
-    trust_score: float
-    report: str
-    details: dict
+    trust_score: float #score assigned by the LLM
+    details: str #string representing the LLM details based on search results
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
@@ -94,10 +92,11 @@ async def analyze(request: AnalysisRequest):
 
                 query = checked_data['error_details']['suggested_retry']
         
-        # 4. Calcolo score
+        # 4. Score computing
         score, details = await TrustScorerAgent().run(str(verification_log))
 
-        details = {'comment': details}
+        if not details or not score: return HTTPException(status_code=500, detail="LLM parsing failed!")
+
         log_step('score', score)
         log_step('details', details)
     
@@ -109,15 +108,8 @@ async def analyze(request: AnalysisRequest):
         print(e)
         return HTTPException(status_code=500, detail=e)
 
-    # 5. Generazione report
-    report = f"""# Trust.me Report\n\n
-            **Trust Score:** {score}/100\n\n## 
-            Details\n{details}\n\n---\n\n## 
-            Analyzed data\n{checked_data}\n"""
-    
-    log_step('report', report)
-
-    return AnalysisResponse(trust_score=score, report=report, details=details or {})
+    # 5. Return data
+    return AnalysisResponse(trust_score=score, details=details or "")
 
 @app.get("/health")
 def health():
