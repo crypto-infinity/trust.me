@@ -15,9 +15,24 @@ class ScraperAgent:
             azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT")
         )
         
-    def clean_text(self, s):
-        # Tieni solo caratteri stampabili e ASCII
-        return ''.join(c for c in s if 32 <= ord(c) <= 126 or c in '\n\r\t').strip()
+    def clean_text(self, chunks):
+        # Se è una lista, unisci tutto in un testo unico
+        if isinstance(chunks, list):
+            text = ' '.join(chunks)
+        else:
+            text = str(chunks)
+        # Rimuovi riferimenti tipo [1], [a], ecc.
+        text = re.sub(r'\[\w+\]', '', text)
+        # Rimuovi sequenze di simboli o caratteri ripetuti
+        text = re.sub(r'([^\w\s]{2,}|_{2,}|-{2,})', ' ', text)
+        # Rimuovi eccessi di spazi
+        text = re.sub(r'\s+', ' ', text)
+        # Suddividi in frasi
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        # Tieni solo caratteri stampabili e ASCII e filtra frasi troppo corte (>15 caratteri)
+        cleaned = [''.join(c for c in s if 32 <= ord(c) <= 126 or c in '\n\r\t').strip() for s in sentences]
+        cleaned = [s for s in cleaned if len(s) > 15 and not s.isdigit()]
+        return cleaned
             
     def is_valid_url(self, url):
         # Regex semplificata e corretta per http/https
@@ -27,7 +42,7 @@ class ScraperAgent:
         self,
         search_results: list[str],
         user_query: str,
-        top_k: int = 5
+        top_k: int = 10
     ) -> list[str]:
         """
         Estrae i chunk di testo più rilevanti rispetto alla query dell'utente dalle pagine web usando LangChain e AzureOAIEmbeddings.
@@ -66,24 +81,23 @@ class ScraperAgent:
                     script.decompose()
 
                 text = soup.get_text(separator=' ', strip=True)
-
-                # Suddividi in frasi/chunk e rimuovi caratteri non ASCII o non leggibili
-                phrases = [self.clean_text(f) for f in text.split('. ') if len(self.clean_text(f)) > 30]
-
-                texts.extend(phrases)
+                texts.append(text)
             except Exception as e:
                 print(e)
 
-        if not texts:
-            return []
+        if not texts: return []
+
+
+        cleaned_chunks = self.clean_text(texts) or []
 
         # Calcola embedding per query e chunk
         query_emb = np.array(self.embeddings.embed_query(user_query))
-        chunk_embs = np.array(self.embeddings.embed_documents(texts))
+        chunk_embs = np.array(self.embeddings.embed_documents(cleaned_chunks))
 
         # Calcola similarità coseno
         similarities = np.dot(chunk_embs, query_emb) / (np.linalg.norm(chunk_embs, axis=1) * np.linalg.norm(query_emb) + 1e-8)
         top_indices = similarities.argsort()[::-1][:top_k]
 
-        relevant_chunks = [texts[i] for i in top_indices]
+        relevant_chunks = [cleaned_chunks[i] for i in top_indices]
+
         return relevant_chunks
