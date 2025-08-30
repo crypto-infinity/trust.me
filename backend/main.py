@@ -21,8 +21,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 from collections import defaultdict
 
+__VERSION__ = "0.2.0"
+
 #FastAPI Setup
-app = FastAPI(title="Trust.me API")
+app = FastAPI(title="Trust.me API", version=__VERSION__)
 
 # Google search parameters
 params = {
@@ -128,7 +130,7 @@ async def analyze(request: AnalysisRequest):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": __VERSION__}
 
 @app.get("/")
 def main_page():
