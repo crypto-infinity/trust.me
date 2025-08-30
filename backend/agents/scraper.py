@@ -44,7 +44,7 @@ class ScraperAgent:
         self,
         search_results: list[str],
         user_query: str,
-        top_k: int = 10
+        top_k: int = 3
     ) -> list[str]:
         """
         Estrae i chunk di testo più rilevanti rispetto alla query dell'utente dalle pagine web usando LangChain e AzureOAIEmbeddings.
@@ -72,8 +72,8 @@ class ScraperAgent:
 
         texts = []
 
-        # Check for valid links
-        links = [url for url in search_results if self.is_valid_url(url)]
+        # Check for valid links e limita a 5
+        links = [url for url in search_results if self.is_valid_url(url)][:5]  # Limita a 5 link
 
         for url in links:
             try:
