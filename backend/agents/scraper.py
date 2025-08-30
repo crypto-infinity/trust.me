@@ -75,20 +75,23 @@ class ScraperAgent:
         links = [url for url in search_results if self.is_valid_url(url)]
 
         for url in links:
-            resp = requests.get(url, timeout=10, headers=headers)
-            soup = BeautifulSoup(resp.text, 'html.parser')
+            try:
+                resp = requests.get(url, timeout=10, headers=headers)
+                soup = BeautifulSoup(resp.text, 'html.parser')
 
-            for script in soup(["script", "style"]): script.decompose()
+                for script in soup(["script", "style"]): script.decompose()
 
-            text = soup.get_text(separator=' ', strip=True)
-            texts.append(text)
+                text = soup.get_text(separator=' ', strip=True)
+                texts.append(text)
+            except ConnectionError as e:
+                print(f"INFO - Skipping: {e}")
 
         if not texts: return []
 
         #Preprocessing
         cleaned_chunks = self.clean_text(texts)
 
-        #Embeddings
+        #Vector Store
         docs = [Document(page_content=chunk) for chunk in cleaned_chunks]
         vectorstore = FAISS.from_documents(docs, self.embeddings)
 
