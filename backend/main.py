@@ -15,6 +15,10 @@ from agents.scraper import ScraperAgent
 
 #Load data structures
 from pydantic import BaseModel
+# Configurazione logging
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 from collections import defaultdict
 
 #FastAPI Setup
@@ -58,6 +62,8 @@ class AnalysisResponse(BaseModel):
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
 
+    logging.info(f"Beginning scoring of subject {request.subject}...")
+
     #Variables setup
     checked = False
     query = ""
@@ -72,11 +78,8 @@ async def analyze(request: AnalysisRequest):
 
     try:
         while(not checked):
-
             search_results = ""
-
-            print("Beginning SerpAPI Searches.")
-
+            logging.info("Beginning SerpAPI Searches.")
             # 1 Search links through SerpAPI
             search_results = await SearchAgent().run(
                 request.subject, 
@@ -85,16 +88,14 @@ async def analyze(request: AnalysisRequest):
                 params
             )
 
-            print("Beginning Scraping and Preprocessing.")
-
+            logging.info("Beginning Scraping and Preprocessing.")
             # 2 Web Scraping, embeddings and preprocessing
             scraped_data = await ScraperAgent().run(
                 search_results,
                 request.subject + request.context + query #for similarity search
             )
 
-            print("Beginning Validation.")
-
+            logging.info("Beginning Validation.")
             # 3 Relevant chunks verification through automatic validation
             checked_data = await VerifierAgent().run(scraped_data)
 
@@ -105,25 +106,23 @@ async def analyze(request: AnalysisRequest):
             else:
                 verification_log['searches'].append(checked_data['data'])
                 verification_log['whys'].append(checked_data['error_details']['whys'])
-
                 query = checked_data['error_details']['suggested_retry']
 
-        print("Beginning Scoring.")
-
+        logging.info("Beginning Scoring.")
         # 4. Score computing
         score, details = await TrustScorerAgent().run(verification_log)
-
-        if not details or not score: raise Exception("LLM Parsing Failed.")
-    
+        if not details or not score:
+            raise Exception("LLM Parsing Failed.")
+        
     except HTTPException as httpexc:
-        print(httpexc)
+        logging.error(httpexc)
         raise HTTPException(status_code=500, detail=str(httpexc))
-
+    
     except Exception as e:
-        print(e)
+        logging.error(e)
         raise HTTPException(status_code=500, detail=str(e))
     
-    print("Analysis complete!")
+    logging.info("Analysis complete!")
     # 5. Return data
     return AnalysisResponse(trust_score=score or 0.0, details=details or "")
 
