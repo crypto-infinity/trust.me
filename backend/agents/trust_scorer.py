@@ -39,28 +39,31 @@ class TrustScorerAgent:
         
         result = self.llm.invoke(prompt)
         content = getattr(result, 'content', str(result))
-        
-        # Prova parsing diretto
+
+        # BUG: known parser error. Implementing serialization fallback chain
         try:
+            # 1: direct parse
             parsed = json.loads(content)
             return parsed['score'], parsed['details']
-        except Exception as e1:
-            # Prova ad estrarre il primo oggetto JSON valido dalla risposta (multilinea, solo tra graffe)
+        
+        except Exception:
             try:
+                # 2: regex
                 match = re.search(r'\{(?:[^{}]|\n|\r)*\}', content)
                 if match:
                     json_str = match.group(0)
-                    # Rimuovi eventuale virgola finale prima della chiusura
                     json_str = re.sub(r',\s*\}$', '}', json_str)
                     parsed = json.loads(json_str)
-                    return parsed.get('score', 50.0), parsed.get('details', {'error': 'Dettagli non trovati'})
+                    return parsed.get('score', None), parsed.get('details', None)
+                else:
+                    return None, None
+                
             except Exception:
-                pass
+                # 3: multiline regex
+                score_match = re.search(r'"score"\s*:\s*([0-9]+\.?[0-9]*)', content)
+                details_match = re.search(r'"details"\s*:\s*"([\s\S]*?)"\s*[\}\n]', content)
+                
+                score = float(score_match.group(1)) if score_match else None
+                details = details_match.group(1).strip() if details_match else None
 
-            # Fallback: estrai score e details con regex multilinea e usali SEMPRE per il report
-            score_match = re.search(r'"score"\s*:\s*([0-9]+\.?[0-9]*)', content)
-            details_match = re.search(r'"details"\s*:\s*"([\s\S]*?)"\s*[\}\n]', content)
-            score = float(score_match.group(1)) if score_match else None
-            details = details_match.group(1).strip() if details_match else None
-
-            return score, details
+                return score, details
