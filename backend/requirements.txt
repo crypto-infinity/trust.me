@@ -9,3 +9,4 @@ python-dotenv
 langchain_community
 langchain_openai
 google-search-results
+faiss-cpu

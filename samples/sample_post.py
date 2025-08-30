@@ -4,7 +4,7 @@ import os
 
 URL = "http://localhost:8000/analyze"
 
-if os.path.exists("./query.json"):
+if os.path.exists("query.json"):
     with open("query.json", "r") as f:
         data = json.load(f)
 else:
