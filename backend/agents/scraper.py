@@ -1,5 +1,7 @@
 from langchain_openai import AzureOpenAIEmbeddings
-import numpy as np
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+
 from bs4 import BeautifulSoup
 import requests
 import os
@@ -35,7 +37,6 @@ class ScraperAgent:
         return cleaned
             
     def is_valid_url(self, url):
-        # Regex semplificata e corretta per http/https
         return re.match(r'^https?://[\w\-\.]+(:\d+)?(/[\w\-\.~:/?#\[\]@!$&\'"()*+,;=%]*)?$', url, re.IGNORECASE)
     
     async def run(
@@ -58,7 +59,7 @@ class ScraperAgent:
         Returns:
             Lista di chunk di testo rilevanti
         """
-        texts = []
+        
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -68,36 +69,31 @@ class ScraperAgent:
             'Referer': 'https://www.google.com/'
         }
 
+        texts = []
+
         # Check for valid links
         links = [url for url in search_results if self.is_valid_url(url)]
 
         for url in links:
-            try:
-                resp = requests.get(url, timeout=10, headers=headers)
-                soup = BeautifulSoup(resp.text, 'html.parser')
+            resp = requests.get(url, timeout=10, headers=headers)
+            soup = BeautifulSoup(resp.text, 'html.parser')
 
-                # Estrai solo testo significativo (rimuovi script/style)
-                for script in soup(["script", "style"]):
-                    script.decompose()
+            for script in soup(["script", "style"]): script.decompose()
 
-                text = soup.get_text(separator=' ', strip=True)
-                texts.append(text)
-            except Exception as e:
-                print(e)
+            text = soup.get_text(separator=' ', strip=True)
+            texts.append(text)
 
         if not texts: return []
 
+        #Preprocessing
+        cleaned_chunks = self.clean_text(texts)
 
-        cleaned_chunks = self.clean_text(texts) or []
+        #Embeddings
+        docs = [Document(page_content=chunk) for chunk in cleaned_chunks]
+        vectorstore = FAISS.from_documents(docs, self.embeddings)
 
-        # Calcola embedding per query e chunk
-        query_emb = np.array(self.embeddings.embed_query(user_query))
-        chunk_embs = np.array(self.embeddings.embed_documents(cleaned_chunks))
-
-        # Calcola similarità coseno
-        similarities = np.dot(chunk_embs, query_emb) / (np.linalg.norm(chunk_embs, axis=1) * np.linalg.norm(query_emb) + 1e-8)
-        top_indices = similarities.argsort()[::-1][:top_k]
-
-        relevant_chunks = [cleaned_chunks[i] for i in top_indices]
+        #Similarity search
+        results = vectorstore.similarity_search(user_query, k=top_k)
+        relevant_chunks = [doc.page_content for doc in results]
 
         return relevant_chunks
