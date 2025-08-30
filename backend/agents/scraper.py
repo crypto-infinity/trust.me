@@ -1,6 +1,7 @@
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+import logging
 
 from bs4 import BeautifulSoup
 import requests
@@ -83,8 +84,10 @@ class ScraperAgent:
 
                 text = soup.get_text(separator=' ', strip=True)
                 texts.append(text)
-            except ConnectionError as e:
-                print(f"INFO - Skipping: {e}")
+
+            except Exception as e:
+                logging.warning(f"Skipping site: {e}")
+                continue
 
         if not texts: return []
 
