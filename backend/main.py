@@ -75,6 +75,8 @@ async def analyze(request: AnalysisRequest):
 
             search_results = ""
 
+            print("Beginning SerpAPI Searches.")
+
             # 1 Search links through SerpAPI
             search_results = await SearchAgent().run(
                 request.subject, 
@@ -83,11 +85,15 @@ async def analyze(request: AnalysisRequest):
                 params
             )
 
+            print("Beginning Scraping and Preprocessing.")
+
             # 2 Web Scraping, embeddings and preprocessing
             scraped_data = await ScraperAgent().run(
                 search_results,
                 request.subject + request.context + query #for similarity search
             )
+
+            print("Beginning Validation.")
 
             # 3 Relevant chunks verification through automatic validation
             checked_data = await VerifierAgent().run(scraped_data)
@@ -101,22 +107,25 @@ async def analyze(request: AnalysisRequest):
                 verification_log['whys'].append(checked_data['error_details']['whys'])
 
                 query = checked_data['error_details']['suggested_retry']
-        
+
+        print("Beginning Scoring.")
+
         # 4. Score computing
-        score, details = await TrustScorerAgent().run(str(verification_log))
+        score, details = await TrustScorerAgent().run(verification_log)
 
-        if not details or not score: return HTTPException(status_code=500, detail="LLM parsing failed!")
-
-        # 5. Return data
-        return AnalysisResponse(trust_score=score, details=details)
+        if not details or not score: raise Exception("LLM Parsing Failed.")
     
     except HTTPException as httpexc:
         print(httpexc)
-        return HTTPException(status_code=500, detail=httpexc)
+        raise HTTPException(status_code=500, detail=str(httpexc))
 
     except Exception as e:
         print(e)
-        return HTTPException(status_code=500, detail=e)
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    print("Analysis complete!")
+    # 5. Return data
+    return AnalysisResponse(trust_score=score or 0.0, details=details or "")
 
 @app.get("/health")
 def health():
