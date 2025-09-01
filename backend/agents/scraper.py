@@ -11,6 +11,12 @@ from langchain_core.documents import Document
 
 class ScraperAgent:
     def __init__(self) -> None:
+        """
+        Initializes the ScraperAgent with Azure OpenAI Embeddings.
+        Requires the following environment variables:
+        - AZURE_OPENAI_EMBEDDING_DEPLOYMENT
+        - AZURE_OPENAI_ENDPOINT
+        """
         self.embeddings = AzureOpenAIEmbeddings(
             azure_deployment=os.environ.get(
                 "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"
@@ -22,7 +28,11 @@ class ScraperAgent:
 
     def clean_text(self, chunks):
         """
-        Pulisce e segmenta il testo estratto dallo scraping.
+        Cleans and segments the extracted text from scraping.
+        Args:
+            chunks: List or string of raw text extracted from web pages.
+        Returns:
+            List of cleaned sentences longer than 15 characters.
         """
         if isinstance(chunks, list):
             text = ' '.join(chunks)
@@ -42,7 +52,13 @@ class ScraperAgent:
         return cleaned
 
     def is_valid_url(self, url):
-        """Verifica se l'URL è valido."""
+        """
+        Checks if the provided URL is valid.
+        Args:
+            url: URL string to validate.
+        Returns:
+            True if valid, False otherwise.
+        """
         return re.match(
             r'^https?://[\w\-\.]+(:\d+)?'
             r'(/[\w\-\.~:/?#\[\]@!$&\'"()*+,;=%]*)?$',
@@ -57,20 +73,19 @@ class ScraperAgent:
         top_k: int = 3
     ) -> list[str]:
         """
-        Estrae i chunk di testo più rilevanti rispetto alla query dell'utente
-        dalle pagine web usando LangChain e AzureOAIEmbeddings.
-        Tutti i parametri di configurazione Azure OpenAI (deployment, endpoint,
-        chiave, versione) devono essere forniti tramite variabili d'ambiente:
+        Extracts the most relevant text chunks for the user's query from web
+        pages using LangChain and AzureOpenAIEmbeddings.
+        Requires the following environment variables:
         - AZURE_OPENAI_DEPLOYMENT_NAME
         - AZURE_OPENAI_ENDPOINT
         - OPENAI_API_KEY
         - OPENAI_API_VERSION
         Args:
-            search_results: lista di URL da cui estrarre il testo
-            user_query: la query dell'utente
-            top_k: numero di chunk più simili da restituire
+            search_results: List of URLs to extract text from.
+            user_query: The user's query string.
+            top_k: Number of most similar chunks to return.
         Returns:
-            Lista di chunk di testo rilevanti
+            List of relevant text chunks.
         """
         headers = {
             'User-Agent': (
@@ -90,7 +105,9 @@ class ScraperAgent:
 
         texts = []
 
-        links = [url for url in search_results if self.is_valid_url(url)][:5]
+        links = [
+            url for url in search_results if self.is_valid_url(url)
+        ][:top_k]
 
         for url in links:
             try:

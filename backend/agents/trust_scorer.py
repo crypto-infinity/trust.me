@@ -6,6 +6,14 @@ from langchain_openai import AzureChatOpenAI
 
 class TrustScorerAgent:
     def __init__(self):
+        """
+        Initializes the TrustScorerAgent with AzureChatOpenAI.
+        Requires the following environment variables:
+        - AZURE_OPENAI_API_KEY
+        - AZURE_OPENAI_ENDPOINT
+        - AZURE_OPENAI_DEPLOYMENT
+        - AZURE_OPENAI_MODEL (optional, defaults to 'gpt-35-turbo')
+        """
         self.llm = AzureChatOpenAI(
             api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # type: ignore
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
@@ -15,7 +23,17 @@ class TrustScorerAgent:
         )
 
     async def run(self, verified_data_log):
-
+        """
+        Computes a trust score (0-100) and explanatory details using the
+        provided search results log.
+        Requires Azure OpenAI environment variables as set in __init__.
+        Args:
+            verified_data_log: Dictionary containing 'searches' key with list
+            of search result texts.
+        Returns:
+            Tuple (score: float, details: str) with the trust score and
+            explanation.
+        """
         prompt = """
             Usa i risultati (searches) forniti in formato JSON per assegnare
             uno score di fiducia (0-100), spiegandone le motivazioni.
