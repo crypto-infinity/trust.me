@@ -1,19 +1,19 @@
 # Gunicorn configuration file
 import multiprocessing
 
-#timeout
+# timeout
 timeout = 120
 graceful_timeout = 120
 
-#requests limits
+# requests limits
 max_requests = 1000
 max_requests_jitter = 50
 
 log_file = "-"
 
-#binding
+# binding
 bind = "0.0.0.0:8000"
 
-#worker nodes
+# worker nodes
 worker_class = "uvicorn.workers.UvicornWorker"
-workers = max(1, multiprocessing.cpu_count() // 2)  # Usa metà dei core
+workers = max(1, multiprocessing.cpu_count() // 2)
