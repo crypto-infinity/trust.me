@@ -1,5 +1,11 @@
 class HumanCheckAgent:
     async def run(self, verified_data):
-        # Qui potresti implementare una logica di validazione manuale o output parser
-        # Per ora passa i dati così come sono
+        """
+        Optionally implements manual validation or output parsing logic.
+        Does not require any environment variables.
+        Args:
+            verified_data: Data already validated by automatic agents.
+        Returns:
+            The input data, unchanged.
+        """
         return verified_data

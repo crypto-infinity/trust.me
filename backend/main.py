@@ -1,28 +1,31 @@
-#Load env variables
-from dotenv import load_dotenv
-load_dotenv()
 
-#Load fastapi
-from fastapi import FastAPI, Depends, HTTPException
+
+"""
+Main FastAPI application for Trust.me API.
+"""
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-
-#Load agents
 from agents.search import SearchAgent
 from agents.verifier import VerifierAgent
 from agents.trust_scorer import TrustScorerAgent
 from agents.scraper import ScraperAgent
-
-#Load data structures
 from pydantic import BaseModel
-# Configurazione logging
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 from collections import defaultdict
+import logging
 
-#FastAPI Setup
-app = FastAPI(title="Trust.me API")
+# Load env variables
+load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+__VERSION__ = "0.3.0"
+
+# FastAPI Setup
+app = FastAPI(title="Trust.me API", version=__VERSION__)
 
 # Google search parameters
 params = {
@@ -30,7 +33,7 @@ params = {
     "device": "desktop",
     "hl": "en",
     "gl": "us",
-    "num": 10
+    "num": 10,
 }
 
 # CORS setup
@@ -42,14 +45,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#Data structures setup
+
+# Data structures setup
+
 class AnalysisRequest(BaseModel):
-    subject: str # Person or company name, mandatory
-    context: str # "search context"
+    """
+    Request model for analysis endpoint.
+    Attributes:
+        subject: Person or company name (required)
+        context: Search context (required)
+    """
+    subject: str  # Person or company name, mandatory
+    context: str  # "search context"
+
 
 class AnalysisResponse(BaseModel):
-    trust_score: float #score assigned by the LLM
-    details: str #string representing the LLM details based on search results
+    """
+    Response model for analysis endpoint.
+    Attributes:
+        trust_score: Score assigned by the LLM
+        details: String representing the LLM details based on search results
+    """
+    trust_score: float  # score assigned by the LLM
+    details: str  # string representing the LLM details based on search results
+
 
 # POST /analyze
 # curl -X POST http://localhost:8000/analyze \
@@ -59,77 +78,86 @@ class AnalysisResponse(BaseModel):
 #     "context": "Verifica affidabilità per collaborazione aziendale"
 #   }'
 
+
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
+    """
+    Main endpoint for trust analysis.
+    Orchestrates search, scraping, validation, and scoring using agent classes.
+    Requires environment variables for all agent classes (see docstrings).
+    Args:
+        request: AnalysisRequest object containing subject and context.
+    Returns:
+        AnalysisResponse with trust_score and details.
+    """
 
     logging.info(f"Beginning scoring of subject {request.subject}...")
 
-    #Variables setup
     checked = False
     query = ""
     checked_data = None
     score = 0
     details = None
-
-    #Verification log
     verification_log = defaultdict(list)
-    verification_log['searches'] = []
-    verification_log['whys'] = []
+    verification_log["searches"] = []
+    verification_log["whys"] = []
 
     try:
-        while(not checked):
+        while not checked:
             search_results = ""
             logging.info("Beginning SerpAPI Searches.")
-            # 1 Search links through SerpAPI
             search_results = await SearchAgent().run(
-                request.subject, 
-                request.context, 
-                query, 
-                params
+                request.subject, request.context, query, params
             )
 
             logging.info("Beginning Scraping and Preprocessing.")
-            # 2 Web Scraping, embeddings and preprocessing
             scraped_data = await ScraperAgent().run(
                 search_results,
-                request.subject + request.context + query #for similarity search
+                request.subject + request.context + query,
             )
 
             logging.info("Beginning Validation.")
-            # 3 Relevant chunks verification through automatic validation
             checked_data = await VerifierAgent().run(scraped_data)
 
-            # Check if VerifierAgent gives ok, otherwise append motivations and reiterate
-            if(checked_data['verified'] == "OK"): 
+            if checked_data["verified"] == "OK":
                 checked = True
-                verification_log["searches"].append(checked_data['data'])
+                verification_log["searches"].append(checked_data["data"])
             else:
-                verification_log['searches'].append(checked_data['data'])
-                verification_log['whys'].append(checked_data['error_details']['whys'])
-                query = checked_data['error_details']['suggested_retry']
+                verification_log["searches"].append(
+                    checked_data["data"]
+                )
+                verification_log["whys"].append(
+                    checked_data["error_details"]["whys"]
+                )
+                query = checked_data["error_details"]["suggested_retry"]
 
         logging.info("Beginning Scoring.")
-        # 4. Score computing
         score, details = await TrustScorerAgent().run(verification_log)
         if not details or not score:
             raise Exception("LLM Parsing Failed.")
-        
     except HTTPException as httpexc:
         logging.error(httpexc)
         raise HTTPException(status_code=500, detail=str(httpexc))
-    
     except Exception as e:
         logging.error(e)
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     logging.info("Analysis complete!")
-    # 5. Return data
     return AnalysisResponse(trust_score=score or 0.0, details=details or "")
+
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    """
+    Health check endpoint.
+    Returns API status and version.
+    """
+    return {"status": "ok", "version": __VERSION__}
+
 
 @app.get("/")
 def main_page():
-    return RedirectResponse(url='/health', status_code=301)
+    """
+    Redirects root endpoint to health check.
+    """
+    return RedirectResponse(url="/health", status_code=301)
