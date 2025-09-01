@@ -11,3 +11,4 @@ google-search-results
 faiss-cpu
 gunicorn
 uvicorn[standard]
+pytest
