@@ -1,20 +1,6 @@
-from pydantic import BaseModel
+
 import requests
 import json
-
-# Pydantic Data structures
-
-
-class AnalysisRequest(BaseModel):
-    subject: str  # Person or company name
-    type: str  # "person" | "company"
-    context: str  # "search context"
-
-
-class AnalysisResponse(BaseModel):
-    trust_score: float
-    report: str
-    details: dict
 
 
 def test_analyze_method(url):
@@ -27,7 +13,7 @@ def test_analyze_method(url):
     response = requests.post(url, json=data).json()
 
     assert (
-        response.status == "200"
+        response.status_code == 200
     ), f"Analyze method failed, got response {response.status}"
 
     print(
