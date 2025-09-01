@@ -18,7 +18,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-__VERSION__ = "0.2.1"
+__VERSION__ = "0.3.0"
 
 # FastAPI Setup
 app = FastAPI(title="Trust.me API", version=__VERSION__)
