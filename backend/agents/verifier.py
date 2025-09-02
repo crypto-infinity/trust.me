@@ -1,6 +1,7 @@
 import os
 import json
 from langchain_openai import AzureChatOpenAI
+from langsmith import Client
 
 
 class VerifierAgent:
@@ -35,42 +36,20 @@ class VerifierAgent:
                 - 'data': the input texts.
                 - 'error_details': parsed error details or 'NO'.
         """
+
+        client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
         if not isinstance(text_chunks, list):
             text_chunks = [str(text_chunks)]
         texts = [str(x) for x in text_chunks if x]
 
-        prompt = """Verifica la coerenza e l'attendibilità delle seguenti
-                    informazioni
-                    (ogni elemento è un estratto da fonti diverse):
-                     {text_chunks}
-
-                     Rispondi solo 'OK' se tutto è coerente, oppure rispondi
-                     con un JSON formato da:
-                     - whys: motivazioni sul perchè non sono coerenti le
-                        informazioni, rappresentate da una lista di frasi
-                        con almeno una frase all'interno.
-                     - suggested_retry: una query generica per motore di
-                        ricerca per variabilizzare la ricerca di nuove
-                        informazioni sulla persona o sull'azienda menzionate.
-
-                     Non includere nella suggested retry il soggetto,
-                     il tipo di soggetto e il contesto fornito
-                     in precedenza dall'utente.
-
-                     Esempio di formattazione JSON:
-                     {{
-                        "whys": [
-                            "motivazione 1",
-                            "motivazione 2"
-                        ],
-                        "suggested_retry": "social profile linkedin crunchbase"
-                     }}
-                """.format(
-            text_chunks=texts
+        prompt_template = client.pull_prompt(
+            "verifier"
         )
 
         result = json.loads(
-            self.llm.invoke(prompt).model_dump_json()
+            self.llm.invoke(
+                prompt_template.format(text_chunks=texts)
+            ).model_dump_json()
         )["content"]
 
         if result != "OK":

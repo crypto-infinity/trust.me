@@ -1,7 +1,9 @@
+
 import os
 import json
 import re
 from langchain_openai import AzureChatOpenAI
+from langsmith import Client
 
 
 class TrustScorerAgent:
@@ -34,31 +36,16 @@ class TrustScorerAgent:
             Tuple (score: float, details: str) with the trust score and
             explanation.
         """
-        prompt = """
-            Usa i risultati (searches) forniti in formato JSON per assegnare
-            uno score di fiducia (0-100), spiegandone le motivazioni.
 
-            Le motivazioni devono indicare un primo paragrafo esplicativo
-            sul soggetto della richiesta, per poi indicare i
-            perchè è stato attribuito il dato score
-            in maniera chiara ed esplicita.
-
-            Esempio di formattazione JSON dei risultati:
-            {{
-            "searches": [
-                "testo ricerca 1",
-                "testo ricerca 2"
-            ]
-            }}
-.
-            Esempio di output JSON valido:
-            {{"score": 85, "details": "Motivazione qui"}}
-
-            Searches:
-            {verified_data_log}
-            """.format(verified_data_log=verified_data_log["searches"])
-
-        result = self.llm.invoke(prompt)
+        client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
+        prompt_template = client.pull_prompt(
+            "scorer"
+        )
+        result = self.llm.invoke(
+            prompt_template.format(
+                **{"verified_data_log": verified_data_log["searches"]}
+            )
+        )
         content = getattr(result, 'content', str(result))
 
         # BUG: known parser error. Implementing serialization fallback chain
