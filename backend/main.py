@@ -9,11 +9,13 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from agents.search import SearchAgent
 from agents.verifier import VerifierAgent
-from agents.trust_scorer import TrustScorerAgent
+from agents.scorer import ScorerAgent
 from agents.scraper import ScraperAgent
 from pydantic import BaseModel
 from collections import defaultdict
 import logging
+
+from config import __VERSION__
 
 # Load env variables
 load_dotenv()
@@ -22,19 +24,10 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-__VERSION__ = "0.3.0"
 
 # FastAPI Setup
 app = FastAPI(title="Trust.me API", version=__VERSION__)
 
-# Google search parameters
-params = {
-    "location": "United States",
-    "device": "desktop",
-    "hl": "en",
-    "gl": "us",
-    "num": 10,
-}
 
 # CORS setup
 app.add_middleware(
@@ -56,7 +49,8 @@ class AnalysisRequest(BaseModel):
         context: Search context (required)
     """
     subject: str  # Person or company name, mandatory
-    context: str  # "search context"
+    context: str  # search context
+    language: str  # output language
 
 
 class AnalysisResponse(BaseModel):
@@ -68,15 +62,6 @@ class AnalysisResponse(BaseModel):
     """
     trust_score: float  # score assigned by the LLM
     details: str  # string representing the LLM details based on search results
-
-
-# POST /analyze
-# curl -X POST http://localhost:8000/analyze \
-#   -H "Content-Type: application/json" \
-#   -d '{
-#     "subject": "John Doe",
-#     "context": "Verifica affidabilità per collaborazione aziendale"
-#   }'
 
 
 @app.post("/analyze", response_model=AnalysisResponse)
@@ -104,10 +89,11 @@ async def analyze(request: AnalysisRequest):
 
     try:
         while not checked:
+
             search_results = ""
             logging.info("Beginning SerpAPI Searches.")
             search_results = await SearchAgent().run(
-                request.subject, request.context, query, params
+                request.subject, request.context, query, request.language
             )
 
             logging.info("Beginning Scraping and Preprocessing.")
@@ -117,7 +103,9 @@ async def analyze(request: AnalysisRequest):
             )
 
             logging.info("Beginning Validation.")
-            checked_data = await VerifierAgent().run(scraped_data)
+            checked_data = await VerifierAgent().run(
+                scraped_data, request.language
+            )
 
             if checked_data["verified"] == "OK":
                 checked = True
@@ -132,7 +120,9 @@ async def analyze(request: AnalysisRequest):
                 query = checked_data["error_details"]["suggested_retry"]
 
         logging.info("Beginning Scoring.")
-        score, details = await TrustScorerAgent().run(verification_log)
+        score, details = await ScorerAgent().run(
+            verification_log, request.language
+        )
         if not details or not score:
             raise Exception("LLM Parsing Failed.")
     except HTTPException as httpexc:

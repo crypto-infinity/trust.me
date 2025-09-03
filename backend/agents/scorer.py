@@ -1,28 +1,16 @@
-import os
+
 import json
 import re
-from langchain_openai import AzureChatOpenAI
+from langchain_setup import llm
+from langchain_setup import langsmith_client
 
 
-class TrustScorerAgent:
+class ScorerAgent:
     def __init__(self):
-        """
-        Initializes the TrustScorerAgent with AzureChatOpenAI.
-        Requires the following environment variables:
-        - AZURE_OPENAI_API_KEY
-        - AZURE_OPENAI_ENDPOINT
-        - AZURE_OPENAI_DEPLOYMENT
-        - AZURE_OPENAI_MODEL (optional, defaults to 'gpt-35-turbo')
-        """
-        self.llm = AzureChatOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # type: ignore
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-            model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
-            temperature=0.2
-        )
+        self.llm = llm
+        self.langsmith_client = langsmith_client
 
-    async def run(self, verified_data_log):
+    async def run(self, verified_data_log, language):
         """
         Computes a trust score (0-100) and explanatory details using the
         provided search results log.
@@ -30,35 +18,21 @@ class TrustScorerAgent:
         Args:
             verified_data_log: Dictionary containing 'searches' key with list
             of search result texts.
+            language: the output language.
         Returns:
             Tuple (score: float, details: str) with the trust score and
             explanation.
         """
-        prompt = """
-            Usa i risultati (searches) forniti in formato JSON per assegnare
-            uno score di fiducia (0-100), spiegandone le motivazioni.
 
-            Le motivazioni devono indicare un primo paragrafo esplicativo
-            sul soggetto della richiesta, per poi indicare i
-            perchè è stato attribuito il dato score
-            in maniera chiara ed esplicita.
-
-            Esempio di formattazione JSON dei risultati:
-            {{
-            "searches": [
-                "testo ricerca 1",
-                "testo ricerca 2"
-            ]
-            }}
-.
-            Esempio di output JSON valido:
-            {{"score": 85, "details": "Motivazione qui"}}
-
-            Searches:
-            {verified_data_log}
-            """.format(verified_data_log=verified_data_log["searches"])
-
-        result = self.llm.invoke(prompt)
+        prompt_template = langsmith_client.pull_prompt(
+            "scorer"
+        )
+        result = self.llm.invoke(
+            prompt_template.format(
+                **{"verified_data_log": verified_data_log["searches"],
+                   "language": language}
+            )
+        )
         content = getattr(result, 'content', str(result))
 
         # BUG: known parser error. Implementing serialization fallback chain

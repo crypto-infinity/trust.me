@@ -1,26 +1,36 @@
 
-from langchain.agents import Tool
-from langchain_community.utilities.serpapi import SerpAPIWrapper
+"""
+Search Agents: enhances and gets search results from user query.
+"""
+from langchain_setup import llm
+from langchain_setup import langsmith_client
+from langchain_setup import search_tool
 
 
 class SearchAgent:
     def __init__(self):
+        self.langsmith_client = langsmith_client
+        self.search_tool = search_tool
+        self.llm = llm
 
-        def search_func(query):
-            result = SerpAPIWrapper().results(query)
-            return result
+    def define_query(self, name, context, suggestion="", language="en-US"):
+        """
+        Generates an enhanced search query for assessing the trustworthiness
+        of a person or company.
+        """
+        prompt_template = langsmith_client.pull_prompt("query_rewriter")
 
-        self.search_tool = Tool(
-            name="search",
-            func=search_func,
-            description=(
-                "Cerca informazioni pubbliche su persone o aziende"
-                "tramite SerpAPI."
-            ),
+        response = self.llm.invoke(
+            prompt_template.format(name=name,
+                                   context=context,
+                                   suggestion=suggestion,
+                                   language=language)
         )
 
+        return getattr(response, 'content', str(response)).strip()
+
     async def run(
-        self, subject: str, context: str, query_suffix: str, params: dict = {}
+        self, subject: str, context: str, query_suffix: str, language: str
     ) -> list[str]:
         """
         Performs a web search based on subject, context, and query.
@@ -29,14 +39,13 @@ class SearchAgent:
             subject: The person or company name to search for.
             context: The search context string.
             query_suffix: Additional query string for refining search.
-            params: Dictionary of search parameters (location, device, etc.).
+            language: the output language.
         Returns:
             List of URLs as search results.
         """
-        query = f"{subject} {context} {query_suffix}"
+        query = self.define_query(subject, context, query_suffix, language)
         result = self.search_tool.run(query)
 
-        # Extract links from organic results
         links = [
             item["link"]
             for item in result.get("organic_results", [])

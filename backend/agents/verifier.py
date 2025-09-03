@@ -1,26 +1,20 @@
+
+"""
+Verifier agent: validates scraper text chunks and provides feedback
+"""
 import os
 import json
-from langchain_openai import AzureChatOpenAI
+from langsmith import Client
+
+from langchain_setup import llm
 
 
 class VerifierAgent:
 
     def __init__(self):
-        """
-        Initializes the VerifierAgent with AzureChatOpenAI.
-        Requires the following environment variables:
-        - AZURE_OPENAI_API_KEY
-        - AZURE_OPENAI_DEPLOYMENT
-        - AZURE_OPENAI_MODEL (optional, defaults to 'gpt-35-turbo')
-        """
-        self.llm = AzureChatOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # type: ignore
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-            model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
-            temperature=0.2,
-        )
+        self.llm = llm
 
-    async def run(self, text_chunks):
+    async def run(self, text_chunks, language):
         """
         Verifies the consistency and reliability of the provided information
           chunks using AzureChatOpenAI.
@@ -28,6 +22,7 @@ class VerifierAgent:
         Args:
             text_chunks: List of strings, each representing extracted
               information from different sources.
+            language: the output language
         Returns:
             Dictionary with keys:
                 - 'verified': 'OK' if all information is consistent, otherwise
@@ -35,42 +30,22 @@ class VerifierAgent:
                 - 'data': the input texts.
                 - 'error_details': parsed error details or 'NO'.
         """
+
+        client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
         if not isinstance(text_chunks, list):
             text_chunks = [str(text_chunks)]
         texts = [str(x) for x in text_chunks if x]
 
-        prompt = """Verifica la coerenza e l'attendibilità delle seguenti
-                    informazioni
-                    (ogni elemento è un estratto da fonti diverse):
-                     {text_chunks}
-
-                     Rispondi solo 'OK' se tutto è coerente, oppure rispondi
-                     con un JSON formato da:
-                     - whys: motivazioni sul perchè non sono coerenti le
-                        informazioni, rappresentate da una lista di frasi
-                        con almeno una frase all'interno.
-                     - suggested_retry: una query generica per motore di
-                        ricerca per variabilizzare la ricerca di nuove
-                        informazioni sulla persona o sull'azienda menzionate.
-
-                     Non includere nella suggested retry il soggetto,
-                     il tipo di soggetto e il contesto fornito
-                     in precedenza dall'utente.
-
-                     Esempio di formattazione JSON:
-                     {{
-                        "whys": [
-                            "motivazione 1",
-                            "motivazione 2"
-                        ],
-                        "suggested_retry": "social profile linkedin crunchbase"
-                     }}
-                """.format(
-            text_chunks=texts
+        prompt_template = client.pull_prompt(
+            "verifier"
         )
 
         result = json.loads(
-            self.llm.invoke(prompt).model_dump_json()
+            self.llm.invoke(
+                prompt_template.format(
+                    text_chunks=texts,
+                    language=language)
+            ).model_dump_json()
         )["content"]
 
         if result != "OK":
