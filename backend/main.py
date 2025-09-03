@@ -104,10 +104,11 @@ async def analyze(request: AnalysisRequest):
 
     try:
         while not checked:
+            # TO-DO: add query rewrite
             search_results = ""
             logging.info("Beginning SerpAPI Searches.")
             search_results = await SearchAgent().run(
-                request.subject, request.context, query, params
+                request.subject, request.context, query
             )
 
             logging.info("Beginning Scraping and Preprocessing.")
