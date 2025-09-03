@@ -1,28 +1,20 @@
+
+"""
+Verifier agent: validates scraper text chunks and provides feedback
+"""
 import os
 import json
-from langchain_openai import AzureChatOpenAI
 from langsmith import Client
-from pydantic import SecretStr
+
+from langchain_setup import llm
 
 
 class VerifierAgent:
 
     def __init__(self):
-        """
-        Initializes the VerifierAgent with AzureChatOpenAI.
-        Requires the following environment variables:
-        - AZURE_OPENAI_API_KEY
-        - AZURE_OPENAI_DEPLOYMENT
-        - AZURE_OPENAI_MODEL (optional, defaults to 'gpt-35-turbo')
-        """
-        self.llm = AzureChatOpenAI(
-            api_key=SecretStr(os.getenv("AZURE_OPENAI_API_KEY") or ""),
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-            model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
-            temperature=0.2,
-        )
+        self.llm = llm
 
-    async def run(self, text_chunks):
+    async def run(self, text_chunks, language):
         """
         Verifies the consistency and reliability of the provided information
           chunks using AzureChatOpenAI.
@@ -30,6 +22,7 @@ class VerifierAgent:
         Args:
             text_chunks: List of strings, each representing extracted
               information from different sources.
+            language: the output language
         Returns:
             Dictionary with keys:
                 - 'verified': 'OK' if all information is consistent, otherwise
@@ -49,7 +42,9 @@ class VerifierAgent:
 
         result = json.loads(
             self.llm.invoke(
-                prompt_template.format(text_chunks=texts)
+                prompt_template.format(
+                    text_chunks=texts,
+                    language=language)
             ).model_dump_json()
         )["content"]
 

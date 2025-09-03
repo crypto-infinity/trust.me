@@ -1,54 +1,36 @@
 
-import os
-from pydantic import SecretStr
-from langsmith import Client
-from langchain.agents import Tool
-from langchain_community.utilities.serpapi import SerpAPIWrapper
-from langchain_openai import AzureChatOpenAI
+"""
+Search Agents: enhances and gets search results from user query.
+"""
+from langchain_setup import llm
+from langchain_setup import langsmith_client
+from langchain_setup import search_tool
 
 
 class SearchAgent:
     def __init__(self):
+        self.langsmith_client = langsmith_client
+        self.search_tool = search_tool
+        self.llm = llm
 
-        def search_func(query):
-            result = SerpAPIWrapper().results(query)
-            return result
-
-        self.search_tool = Tool(
-            name="search",
-            func=search_func,
-            description=(
-                "Cerca informazioni pubbliche su persone o aziende"
-                "tramite SerpAPI."
-            ),
-        )
-
-        self.llm = AzureChatOpenAI(
-            api_key=SecretStr(os.getenv("AZURE_OPENAI_API_KEY") or ""),
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
-            model=os.getenv("AZURE_OPENAI_MODEL", "gpt-4.1"),
-            temperature=0.2
-        )
-
-    def define_query(self, name, context, suggestion=""):
+    def define_query(self, name, context, suggestion="", language="en-US"):
         """
         Generates an enhanced search query for assessing the trustworthiness
         of a person or company.
         """
-        client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
-        prompt_template = client.pull_prompt("query_rewriter")
+        prompt_template = langsmith_client.pull_prompt("query_rewriter")
 
         response = self.llm.invoke(
             prompt_template.format(name=name,
                                    context=context,
-                                   suggestion=suggestion)
+                                   suggestion=suggestion,
+                                   language=language)
         )
 
         return getattr(response, 'content', str(response)).strip()
 
     async def run(
-        self, subject: str, context: str, query_suffix: str
+        self, subject: str, context: str, query_suffix: str, language: str
     ) -> list[str]:
         """
         Performs a web search based on subject, context, and query.
@@ -57,10 +39,11 @@ class SearchAgent:
             subject: The person or company name to search for.
             context: The search context string.
             query_suffix: Additional query string for refining search.
+            language: the output language.
         Returns:
             List of URLs as search results.
         """
-        query = self.define_query(subject, context, query_suffix)
+        query = self.define_query(subject, context, query_suffix, language)
         result = self.search_tool.run(query)
 
         links = [

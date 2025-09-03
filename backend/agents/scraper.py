@@ -1,30 +1,19 @@
 
-import os
 import re
 import logging
 import requests
 from bs4 import BeautifulSoup
-from langchain_openai import AzureOpenAIEmbeddings
+
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+
+from langchain_setup import embeddings
+from config import __TOPK_RESULTS__
 
 
 class ScraperAgent:
     def __init__(self) -> None:
-        """
-        Initializes the ScraperAgent with Azure OpenAI Embeddings.
-        Requires the following environment variables:
-        - AZURE_OPENAI_EMBEDDING_DEPLOYMENT
-        - AZURE_OPENAI_ENDPOINT
-        """
-        self.embeddings = AzureOpenAIEmbeddings(
-            azure_deployment=os.environ.get(
-                "AZURE_OPENAI_EMBEDDING_DEPLOYMENT"
-            ),
-            azure_endpoint=os.environ.get(
-                "AZURE_OPENAI_ENDPOINT"
-            )
-        )
+        self.embeddings = embeddings
 
     def clean_text(self, chunks):
         """
@@ -70,16 +59,11 @@ class ScraperAgent:
         self,
         search_results: list[str],
         user_query: str,
-        top_k: int = 3
+        top_k: int = __TOPK_RESULTS__
     ) -> list[str]:
         """
         Extracts the most relevant text chunks for the user's query from web
         pages using LangChain and AzureOpenAIEmbeddings.
-        Requires the following environment variables:
-        - AZURE_OPENAI_DEPLOYMENT_NAME
-        - AZURE_OPENAI_ENDPOINT
-        - OPENAI_API_KEY
-        - OPENAI_API_VERSION
         Args:
             search_results: List of URLs to extract text from.
             user_query: The user's query string.
@@ -129,4 +113,5 @@ class ScraperAgent:
         vectorstore = FAISS.from_documents(docs, self.embeddings)
         results = vectorstore.similarity_search(user_query, k=top_k)
         relevant_chunks = [doc.page_content for doc in results]
+
         return relevant_chunks
