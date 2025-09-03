@@ -2,6 +2,7 @@
 import os
 import json
 import re
+from pydantic import SecretStr
 from langchain_openai import AzureChatOpenAI
 from langsmith import Client
 
@@ -17,7 +18,7 @@ class TrustScorerAgent:
         - AZURE_OPENAI_MODEL (optional, defaults to 'gpt-35-turbo')
         """
         self.llm = AzureChatOpenAI(
-            api_key=os.getenv("AZURE_OPENAI_API_KEY"),  # type: ignore
+            api_key=SecretStr(os.getenv("AZURE_OPENAI_API_KEY") or ""),
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
             azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT"),
             model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
