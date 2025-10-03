@@ -98,7 +98,7 @@ async def analyze(request: AnalysisRequest):
             logging.info("Beginning Scraping and Preprocessing.")
             scraped_data = await ScraperAgent().run(
                 search_results,
-                request.subject + request.context + query,
+                request.subject + request.context
             )
 
             logging.info("Beginning Validation.")
