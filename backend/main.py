@@ -15,13 +15,13 @@ from pydantic import BaseModel
 from collections import defaultdict
 import logging
 
-from config import __VERSION__
+from config import __VERSION__, __DEBUG_LEVEL__
 
 # Load env variables
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=__DEBUG_LEVEL__, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
