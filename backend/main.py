@@ -76,7 +76,7 @@ async def analyze(request: AnalysisRequest):
         AnalysisResponse with trust_score and details.
     """
 
-    logging.info("Beginning scoring of subjects...")
+    logging.info("Beginning scoring of subject...")
 
     checked = False
     checked_data = None
