@@ -79,7 +79,6 @@ async def analyze(request: AnalysisRequest):
     logging.info("Beginning scoring of subjects...")
 
     checked = False
-    query = ""
     checked_data = None
     score = 0
     details = None
@@ -93,7 +92,7 @@ async def analyze(request: AnalysisRequest):
             search_results = ""
             logging.info("Beginning SerpAPI Searches.")
             search_results = await SearchAgent().run(
-                request.subject, request.context, query, request.language
+                request.subject, request.context, request.language
             )
 
             logging.info("Beginning Scraping and Preprocessing.")
