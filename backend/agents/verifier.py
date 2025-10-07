@@ -2,14 +2,13 @@
 """
 Verifier agent: validates scraper text chunks and provides feedback
 """
-import os
 import json
-from langsmith import Client
 
 from langchain_setup import llm
+from .prompt_templates import VERIFIER_PROMPT
 
 
-class VerifierAgent:
+class VerifierAgent():
 
     def __init__(self):
         self.llm = llm
@@ -31,30 +30,29 @@ class VerifierAgent:
                 - 'error_details': parsed error details or 'NO'.
         """
 
-        client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
         if not isinstance(text_chunks, list):
             text_chunks = [str(text_chunks)]
         texts = [str(x) for x in text_chunks if x]
 
-        prompt_template = client.pull_prompt(
-            "verifier"
+        prompt_template = VERIFIER_PROMPT
+
+        result = self.llm.invoke(
+            prompt_template.format(
+                text_chunks=texts,
+                language=language)
         )
+        content = getattr(result, 'content', str(result))
 
-        result = json.loads(
-            self.llm.invoke(
-                prompt_template.format(
-                    text_chunks=texts,
-                    language=language)
-            ).model_dump_json()
-        )["content"]
-
-        if result != "OK":
-            error_details = json.loads(result)
+        if content != "OK":
+            try:
+                error_details = json.loads(content)
+            except Exception:
+                error_details = content
         else:
             error_details = "NO"
 
         return {
-            "verified": result,
+            "verified": content,
             "data": texts,
             "error_details": error_details,
         }

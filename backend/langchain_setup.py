@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from pydantic import SecretStr
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import AzureOpenAIEmbeddings
-from langsmith import Client
+# from langsmith import Client
 
 from langchain.agents import Tool
 from langchain_community.utilities.serpapi import SerpAPIWrapper
@@ -34,7 +34,7 @@ embeddings = AzureOpenAIEmbeddings(
 )
 
 # Initializes Langsmith Client
-langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
+# langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 
 
 # Initializes the search tool

@@ -1,5 +1,4 @@
 
-
 """
 Main FastAPI application for Trust.me API.
 """
@@ -88,8 +87,6 @@ async def analyze(request: AnalysisRequest):
 
     try:
         while not checked:
-
-            search_results = ""
             logging.info("Beginning SerpAPI Searches.")
             search_results = await SearchAgent().run(
                 request.subject, request.context, request.language
@@ -101,41 +98,52 @@ async def analyze(request: AnalysisRequest):
                 request.subject + request.context
             )
 
+            logging.debug(f"scraped_data: {scraped_data}")
+            if not scraped_data:
+                logging.warning("No data scraped from any site.")
+                return AnalysisResponse(
+                    trust_score=0.0,
+                    details="Nessun dato recuperato dalle fonti."
+                )
+
             logging.info("Beginning Validation.")
             checked_data = await VerifierAgent().run(
                 scraped_data, request.language
             )
 
+            logging.debug(f"checked_data: {checked_data}")
+            if not checked_data or not checked_data.get("data"):
+                logging.warning("Validation returned no data.")
+                return AnalysisResponse(
+                    trust_score=0.0,
+                    details="Nessun dato valido dopo la validazione."
+                )
+
             if checked_data["verified"] == "OK":
                 checked = True
                 verification_log["searches"].append(checked_data["data"])
             else:
-                verification_log["searches"].append(
-                    checked_data["data"]
-                )
+                verification_log["searches"].append(checked_data["data"])
                 verification_log["whys"].append(
                     checked_data["error_details"]["whys"]
                 )
-                query = checked_data["error_details"]["suggested_retry"]
 
         logging.info("Beginning Scoring.")
         score, details = await ScorerAgent().run(
             verification_log, request.language
         )
         if not details or not score:
-            raise Exception("LLM Parsing Failed.")
-    except HTTPException as httpexc:
-        logging.error(httpexc)
-        raise HTTPException(status_code=500, detail=str(httpexc))
+            logging.warning("Scoring failed or returned no details.")
+            return AnalysisResponse(
+                trust_score=0.0,
+                details="Scoring non disponibile o nessun dettaglio prodotto."
+            )
+        return AnalysisResponse(trust_score=score, details=details)
     except Exception as e:
         logging.error(e)
         raise HTTPException(status_code=500, detail=str(e))
 
-    logging.info("Analysis complete!")
-    return AnalysisResponse(trust_score=score or 0.0, details=details or "")
 
-
-@app.get("/health")
 def health():
     """
     Health check endpoint.

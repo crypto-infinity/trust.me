@@ -13,4 +13,5 @@ gunicorn
 uvicorn[standard]
 pytest
 black
+brotli
 aiohttp

@@ -52,7 +52,9 @@ class ScraperAgent:
             async with aiohttp.ClientSession() as session:
                 logging.debug("ClientSession spawned.")
                 async with session.get(
-                    url, headers=headers, timeout=timeout
+                    url, headers=headers, timeout=aiohttp.ClientTimeout(
+                        total=timeout
+                    )
                 ) as resp:
                     html = await resp.text()
                     soup = BeautifulSoup(html, "html.parser")
@@ -71,6 +73,13 @@ class ScraperAgent:
         Yields:
             str: Cleaned sentence longer than 15 and shorter than 1024 chars.
         """
+
+        if not isinstance(text, str):
+            if isinstance(text, list):
+                text = " ".join(str(x) for x in text)
+            else:
+                text = str(text)
+
         text = re.sub(r"\[\w+\]", "", text)
         text = re.sub(r"([^\w\s]{2,}|_{2,}|-{2,})", " ", text)
         text = re.sub(r"\s+", " ", text)
@@ -139,9 +148,19 @@ class ScraperAgent:
 
         sem = asyncio.Semaphore(n_jobs)
 
-        links = [
-            url for url in search_results if self.is_valid_url(url)
-            ][:top_k]
+        logging.debug(f"search_results in ScraperAgent.run: {search_results}")
+        links = []
+        for query_urls in search_results:
+            if isinstance(query_urls, list):
+                for url in query_urls:
+                    if self.is_valid_url(url):
+                        links.append(url)
+            else:
+                if self.is_valid_url(query_urls):
+                    links.append(query_urls)
+        links = links[:top_k]
+        logging.debug(f"Valid links to scrape: {links}")
+
         tasks = [
             self.limited_fetch(url, headers, sem, timeout=__API_TIMEOUT__)
             for url in links

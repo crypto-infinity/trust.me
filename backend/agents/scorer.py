@@ -2,13 +2,12 @@
 import json
 import re
 from langchain_setup import llm
-from langchain_setup import langsmith_client
+from .prompt_templates import SCORER_PROMPT
 
 
 class ScorerAgent:
     def __init__(self):
         self.llm = llm
-        self.langsmith_client = langsmith_client
 
     async def run(self, verified_data_log, language):
         """
@@ -24,13 +23,11 @@ class ScorerAgent:
             explanation.
         """
 
-        prompt_template = langsmith_client.pull_prompt(
-            "scorer"
-        )
+        prompt_template = SCORER_PROMPT
         result = self.llm.invoke(
             prompt_template.format(
-                **{"verified_data_log": verified_data_log["searches"],
-                   "language": language}
+                verified_data_log=verified_data_log["searches"],
+                language=language
             )
         )
         content = getattr(result, 'content', str(result))
