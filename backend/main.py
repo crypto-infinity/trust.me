@@ -144,6 +144,7 @@ async def analyze(request: AnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/health")
 def health():
     """
     Health check endpoint.
