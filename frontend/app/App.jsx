@@ -3,7 +3,7 @@ import "../styles.css";
 
 const BACKEND_PORT = import.meta.env.BACKEND_PORT || window.BACKEND_PORT || 8000;
 const BACKEND_URL = import.meta.env.BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
-import { __VERSION__ } from "config";
+import { __VERSION__ } from "./config";
 
 export default function App({ user }) {
   const [subject, setSubject] = useState("");
