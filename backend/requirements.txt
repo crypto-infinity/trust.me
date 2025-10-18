@@ -1,5 +1,4 @@
 fastapi
-langchain
 openai
 bs4
 requests
@@ -15,3 +14,4 @@ pytest
 black
 brotli
 aiohttp
+langchain==0.3.27
