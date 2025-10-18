@@ -9,7 +9,7 @@ from langchain_openai import AzureChatOpenAI
 from langchain_openai import AzureOpenAIEmbeddings
 # from langsmith import Client
 
-from langchain.agents import Tool
+from langchain.tools import Tool
 from langchain_community.utilities.serpapi import SerpAPIWrapper
 
 load_dotenv()
