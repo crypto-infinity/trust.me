@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import "../styles.css";
 
-const BACKEND_PORT = window.BACKEND_PORT || 8000;
-const BACKEND_URL = window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
+const BACKEND_PORT = import.meta.env.BACKEND_PORT || window.BACKEND_PORT || 8000;
+const BACKEND_URL = import.meta.env.BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
+const __VERSION__ = import.meta.env.VERSION || "0.0.0"
 
 export default function App({ user }) {
   const [subject, setSubject] = useState("");
@@ -38,7 +39,7 @@ export default function App({ user }) {
 
   return (
     <div className={`container${loading ? " loading" : ""}`}> 
-      <h1>Trust.me Analyzer</h1>
+      <h1>Trust.me Analyzer v.{{__VERSION__}}</h1>
       <h2>AI-powered trust score calculator</h2>
       <div style={{marginBottom: 16, fontSize: 15, color: '#555', textAlign: 'center'}}>Benvenuto, <b>{user.name}</b></div>
       <hr></hr>
@@ -47,13 +48,7 @@ export default function App({ user }) {
         <label htmlFor="subject">Soggetto:</label>
         <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} required />
 
-        <label htmlFor="type">Tipo (Persona o Azienda):</label>
-        <select id="type" value={type} onChange={e => setType(e.target.value)} required>
-          <option value="person">Persona</option>
-          <option value="company">Azienda</option>
-        </select>
-
-        <label htmlFor="context">Contesto / Affina la ricerca:</label>
+        <label htmlFor="context">Affina la ricerca [facoltativo]:</label>
         <textarea id="context" value={context} onChange={e => setContext(e.target.value)} required />
 
         <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? "Analisi in corso..." : "Analizza"}</button>
