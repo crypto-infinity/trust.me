@@ -2,6 +2,9 @@ name: Build & Push Frontend Docker Image
 
 on:
   push:
+    paths:
+      - 'service/frontend_dockerfile'
+      - 'frontend/**'
     branches:
       - main
 
@@ -20,12 +23,10 @@ jobs:
           username: ${{ secrets.AZURECR_USERNAME }}
           password: ${{ secrets.AZURECR_PASSWORD }}
 
-      - name: Build frontend Docker image
-        run: |
-          docker build \
-            --build-arg NODE_ENV=production \
-            -f service/frontend_dockerfile \
-            -t ${{ secrets.AZURECR_REGISTRY }}/trustme-frontend:latest .
-
-      - name: Push image to registry
-        run: docker push ${{ secrets.AZURECR_REGISTRY }}/trustme-frontend:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          file: ./service/frontend_dockerfile
+          push: true
+          tags: ${{ secrets.AZURECR_REGISTRY }}/trustme:latest

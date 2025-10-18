@@ -2,6 +2,9 @@ name: Build and Push Docker Image
 
 on:
   push:
+    paths:
+      - 'service/Dockerfile'
+      - 'backend/**'
     branches:
       - main
 
@@ -26,6 +29,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./
-          file: ./service/Dockerfile
+          file: ./service/backend_dockerfile
           push: true
           tags: ${{ secrets.AZURECR_REGISTRY }}/trustme:latest
