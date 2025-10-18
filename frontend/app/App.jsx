@@ -9,7 +9,7 @@ export default function App({ user }) {
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("person"); // non più usato nell'API, ma lasciato per compatibilità UI
   const [context, setContext] = useState("");
-  const [language, setLanguage] = useState("it");
+  const [language, setLanguage] = useState("it-IT");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export default function App({ user }) {
       const response = await fetch(`${BACKEND_URL}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, context, language_code: language })
+        body: JSON.stringify({ subject, context, language })
       });
       if (!response.ok) throw new Error("Errore API: " + response.status);
       const res = await response.json();
@@ -56,11 +56,11 @@ export default function App({ user }) {
 
         <label htmlFor="language">Lingua:</label>
         <select id="language" value={language} onChange={e => setLanguage(e.target.value)}>
-          <option value="it">Italiano</option>
-          <option value="en">English</option>
-          <option value="fr">Français</option>
-          <option value="de">Deutsch</option>
-          <option value="es">Español</option>
+          <option value="it-IT">Italiano</option>
+          <option value="en-US">English</option>
+          <option value="fr-FR">Français</option>
+          <option value="de-DE">Deutsch</option>
+          <option value="es-ES">Español</option>
         </select>
 
         <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? "Analisi in corso..." : "Analizza"}</button>
