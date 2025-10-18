@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import "../styles.css";
 
-const BACKEND_PORT = import.meta.env.BACKEND_PORT || window.BACKEND_PORT || 8000;
-const BACKEND_URL = import.meta.env.BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
+const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || window.BACKEND_PORT || 8000;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
 import { __VERSION__ } from "./config";
 
 export default function App({ user }) {
   const [subject, setSubject] = useState("");
-  const [type, setType] = useState("person");
+  const [type, setType] = useState("person"); // non più usato nell'API, ma lasciato per compatibilità UI
   const [context, setContext] = useState("");
+  const [language, setLanguage] = useState("it");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export default function App({ user }) {
       const response = await fetch(`${BACKEND_URL}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, type, context })
+        body: JSON.stringify({ subject, context, language_code: language })
       });
       if (!response.ok) throw new Error("Errore API: " + response.status);
       const res = await response.json();
@@ -52,6 +53,15 @@ export default function App({ user }) {
 
         <label htmlFor="context">Affina la ricerca [facoltativo]:</label>
         <textarea id="context" value={context} onChange={e => setContext(e.target.value)} required />
+
+        <label htmlFor="language">Lingua:</label>
+        <select id="language" value={language} onChange={e => setLanguage(e.target.value)}>
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+        </select>
 
         <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? "Analisi in corso..." : "Analizza"}</button>
       </form>
