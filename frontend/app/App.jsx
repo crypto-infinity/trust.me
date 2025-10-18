@@ -3,7 +3,7 @@ import "../styles.css";
 
 const BACKEND_PORT = import.meta.env.BACKEND_PORT || window.BACKEND_PORT || 8000;
 const BACKEND_URL = import.meta.env.BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
-const __VERSION__ = import.meta.env.VERSION || "0.0.0"
+import { __VERSION__ } from "config";
 
 export default function App({ user }) {
   const [subject, setSubject] = useState("");
@@ -39,9 +39,11 @@ export default function App({ user }) {
 
   return (
     <div className={`container${loading ? " loading" : ""}`}> 
-      <h1>Trust.me Analyzer v.{{__VERSION__}}</h1>
+      <h1>Trust.me Analyzer v.{__VERSION__}</h1>
       <h2>AI-powered trust score calculator</h2>
-      <div style={{marginBottom: 16, fontSize: 15, color: '#555', textAlign: 'center'}}>Benvenuto, <b>{user.name}</b></div>
+      <div style={{marginBottom: 16, fontSize: 15, color: '#555', textAlign: 'center'}}>
+        Benvenuto, <b>{user && user.name ? user.name : ""}</b>
+      </div>
       <hr></hr>
       <h4>Inserisci i dati della persona o dell'azienda da valutare:</h4>
       <form id="analyze-form" onSubmit={handleSubmit} className={loading ? "form-loading" : ""}>
