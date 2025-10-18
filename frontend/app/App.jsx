@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "../styles.css";
 
 const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || window.BACKEND_PORT || 8000;
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `https://trustme-backend.azurewebsites.net`;
 import { __VERSION__ } from "./config";
 
 export default function App({ user }) {
