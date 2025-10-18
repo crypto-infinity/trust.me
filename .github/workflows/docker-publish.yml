@@ -31,4 +31,4 @@ jobs:
           context: ./
           file: ./service/backend_dockerfile
           push: true
-          tags: ${{ secrets.AZURECR_REGISTRY }}/trustme:latest
+          tags: ${{ secrets.AZURECR_REGISTRY }}/trustme-backend:latest
