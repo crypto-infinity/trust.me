@@ -136,12 +136,15 @@ async def inference(request: AnalysisRequest):
         score, details = await ScorerAgent().run(
             verification_log, request.language
         )
+        
         if not details or not score:
             logging.warning("Scoring failed or returned no details.")
             return AnalysisResponse(
                 trust_score=0.0,
                 details="Scoring non disponibile o nessun dettaglio prodotto."
             )
+        
+        logging.info("Analysis complete.")
         return AnalysisResponse(trust_score=score, details=details)
     except Exception as e:
         logging.error(e)
