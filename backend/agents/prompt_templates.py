@@ -41,21 +41,21 @@ QUERY_DEFINER_PROMPT = PromptTemplate(
 VERIFIER_PROMPT = PromptTemplate(
     input_variables=["text_chunks", "language"],
     template=(
-        "Check the consistency and reliability of the following information "
-        "(each item is an excerpt from different sources): {text_chunks} "
-        "Reply only 'OK' if everything is consistent, or reply with a JSON "
-        "formatted as: "
-        "- whys: reasons why the information is not consistent, "
-        "  represented as a list "
-        "  of sentences (at least one). "
-        "- suggested_retry: a search engine query to vary the search for new "
-        "  information "
-        "  about the mentioned person or company. "
+        "Analyze the following excerpts of information from different sources:"
+        "{text_chunks}. "
+        "Assess whether the information is consistent, reliable,"
+        " and free of contradictions. "
+        "If everything is consistent, reply only 'OK'. "
+        "If you find discrepancies, reply with a JSON containing: "
+        "- whys: a list of contradictions or reasons for doubt (at least one)."
+        "- suggested_retry: a search engine query to clarify the critical "
+        "points and to find additional information for a more complete "
+        "verification. "
         "Do not include the subject, subject type, or the context previously "
-        "provided by the user in the suggested_retry.\n"
-        "Example JSON format: {{\"whys\": [\"reason 1\", \"reason 2\"], "
-        "\"suggested_retry\": \"social profile linkedin crunchbase\"}}. "
-        "Reply in the language {language}."
+        "provided by the user in suggested_retry.\n"
+        "Example: {\"whys\": [\"Reason 1\", \"Reason 2\"],"
+        " \"suggested_retry\": \"keywords for new search\"}. "
+        "Reply in language {language}."
     )
 )
 
