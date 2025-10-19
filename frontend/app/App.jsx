@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "../styles.css";
 
-const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || window.BACKEND_PORT || 8000;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `https://trustme-backend.azurewebsites.net`;
 import { __VERSION__ } from "./config";
 
@@ -75,24 +74,21 @@ export default function App({ user }) {
               const text = result.text || result.report;
               return <>
                 {typeof score === "number" && (
-                  <div className="score-bar-container">
-                    <div className="score-label">Score: <b>{score}</b>/100</div>
-                    <input type="range" min="0" max="100" value={score} disabled className="score-slider" readOnly />
-                    <div className="score-bar-bg">
-                      <div className="score-bar-fill" style={{ width: `${score}%` }}></div>
+                  <>
+                    <div className="score-bar-container">
+                      <div className="score-label">Score: <b>{score}</b>/100</div>
+                      <input type="range" min="0" max="100" value={score} disabled className="score-slider" readOnly />
+                      <div className="score-bar-bg">
+                        <div className="score-bar-fill" style={{ width: `${score}%` }}></div>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {comment && (
-                  <div className="comment-box">
-                    {comment}
                     {result.details && typeof result.details === 'string' && (
-                      <>
-                        <hr style={{margin: '8px 0'}} />
-                        <div style={{fontSize: '0.95em', color: '#444'}}>{result.details}</div>
-                      </>
+                      <div style={{fontFamily: 'inherit', fontSize: '1em', marginTop: 12, color: '#222', whiteSpace: 'pre-line'}}>{result.details}</div>
                     )}
-                  </div>
+                  </>
+                )}
+                {!score && (
+                  <div className="comment-box">{comment || 'Nessun commento disponibile.'}</div>
                 )}
               </>;
             })()}
