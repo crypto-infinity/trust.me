@@ -84,7 +84,15 @@ export default function App({ user }) {
                   </div>
                 )}
                 {comment && (
-                  <div className="comment-box">{comment}</div>
+                  <div className="comment-box">
+                    {comment}
+                    {result.details && typeof result.details === 'string' && (
+                      <>
+                        <hr style={{margin: '8px 0'}} />
+                        <div style={{fontSize: '0.95em', color: '#444'}}>{result.details}</div>
+                      </>
+                    )}
+                  </div>
                 )}
               </>;
             })()}
