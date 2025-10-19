@@ -65,6 +65,10 @@ class AnalysisResponse(BaseModel):
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(request: AnalysisRequest):
+    return await inference(request)
+
+
+async def inference(request: AnalysisRequest):
     """
     Main endpoint for trust analysis.
     Orchestrates search, scraping, validation, and scoring using agent classes.
