@@ -8,6 +8,7 @@ from langchain_setup import llm
 
 from langchain_setup import search_tool
 from .prompt_templates import QUERY_DEFINER_PROMPT
+from config import __TOPK_RESULTS__
 
 
 class SearchAgent:
@@ -22,7 +23,8 @@ class SearchAgent:
             prompt_template.format(
                 name=name,
                 context=context,
-                language=language
+                language=language,
+                top_k=__TOPK_RESULTS__
             )
         )
         # Expecting a JSON list as output
@@ -47,17 +49,18 @@ class SearchAgent:
         links = []
         queries = self.define_queries(subject, context, language)
         logging.debug(f"define_queries: queries generate: {queries}")
+
         for query in queries:
             logging.info(f"Search query: {query}")
             search_result = self.search_tool.run(query)
-            logging.debug(f"search_tool.run({query}) result: {search_result}")
+
+            organic = search_result.get("organic", [])
 
             query_links = [
                 item["link"]
-                for item in search_result.get("organic_results", [])
+                for item in organic
                 if "link" in item
             ]
-            logging.debug(f"query_links for query '{query}': {query_links}")
             if query_links:
                 links.append(query_links)
 

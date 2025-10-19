@@ -148,7 +148,6 @@ class ScraperAgent:
 
         sem = asyncio.Semaphore(n_jobs)
 
-        logging.debug(f"search_results in ScraperAgent.run: {search_results}")
         links = []
         for query_urls in search_results:
             if isinstance(query_urls, list):
@@ -159,7 +158,6 @@ class ScraperAgent:
                 if self.is_valid_url(query_urls):
                     links.append(query_urls)
         links = links[:top_k]
-        logging.debug(f"Valid links to scrape: {links}")
 
         tasks = [
             self.limited_fetch(url, headers, sem, timeout=__API_TIMEOUT__)

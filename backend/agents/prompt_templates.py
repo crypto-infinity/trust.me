@@ -5,30 +5,19 @@ Prompt templates for TrustME agents.
 from langchain.prompts import PromptTemplate
 
 QUERY_DEFINER_PROMPT = PromptTemplate(
-    input_variables=["name", "language", "context"],
+    input_variables=["name", "language", "context", "top_k"],
     template=(
         "You are an OSINT research agent. "
         "You receive as input the name of a company or individual "
         "(e.g., 'OpenAI', 'Gabriele Scorpaniti') and some context. "
         "Your task is to generate a list of search queries, in the specified "
-        "language and optimized for SerpApi, tailored to the type of the input"
-        " provided.\n\n"
-        "Generate one query string ready to be used with SerpApi. Queries "
+        "language and optimized for Serper Api, tailored to the type of the "
+        "input provided. Generate at least {top_k} queries.\n\n"
+        "Generate one query string ready to be used with Serper Api. Queries "
         "should include Boolean operators, quotation marks for exact phrases,"
         "and specific "
         "keywords to increase precision. If the subject is a person, adapt the"
         " categories accordingly. Use the context only if relevant.\n\n"
-        "Example output for 'OpenAI':\n"
-        "- 'OpenAI company profile site:linkedin.com'\n"
-        "- 'OpenAI recent news site:cnn.com OR site:bbc.com'\n"
-        "- 'OpenAI controversy OR criticism OR lawsuit'\n"
-        "- 'OpenAI partnerships OR investors site:techcrunch.com'\n"
-        "- 'OpenAI Twitter OR Reddit reputation'\n"
-        "- 'OpenAI reviews OR user feedback site:trustpilot.com'\n"
-        "- 'OpenAI annual report OR whitepaper filetype:pdf'\n"
-        "- 'OpenAI patents OR publications site:google.com/patents'\n"
-        "- 'OpenAI careers OR work culture site:glassdoor.com'\n"
-        "- 'OpenAI CEO interview OR keynote OR conference'\n\n"
         "Return ONLY the output as a pure JSON list, without any markdown, "
         "backticks, or code block. Do not include ```json or similar. "
         "Output only the JSON list.\n\n"
@@ -53,8 +42,8 @@ VERIFIER_PROMPT = PromptTemplate(
         "verification. "
         "Do not include the subject, subject type, or the context previously "
         "provided by the user in suggested_retry.\n"
-        "Example: {\"whys\": [\"Reason 1\", \"Reason 2\"],"
-        " \"suggested_retry\": \"keywords for new search\"}. "
+        "Example: {{\"whys\": [\"Reason 1\", \"Reason 2\"],"
+        " \"suggested_retry\": \"keywords for new search\"}}. "
         "Reply in language {language}."
     )
 )
