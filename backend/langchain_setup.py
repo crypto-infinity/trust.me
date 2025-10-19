@@ -7,12 +7,13 @@ from dotenv import load_dotenv
 from pydantic import SecretStr
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import AzureOpenAIEmbeddings
-# from langsmith import Client
 
 from langchain.tools import Tool
-from langchain_community.utilities.serpapi import SerpAPIWrapper
+from langchain_community.utilities import GoogleSerperAPIWrapper
+from config import __TOPK_RESULTS__
 
 load_dotenv()
+
 
 # Initializes an LLM istance
 llm = AzureChatOpenAI(
@@ -37,9 +38,12 @@ embeddings = AzureOpenAIEmbeddings(
 # langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 
 
-# Initializes the search tool
+# Inizializza GoogleSerperAPIWrapper
+google_search = GoogleSerperAPIWrapper(k=__TOPK_RESULTS__)
+
+
 def search_func(query):
-    result = SerpAPIWrapper().results(query)
+    result = google_search.results(query)
     return result
 
 
@@ -47,6 +51,6 @@ search_tool = Tool(
     name="search",
     func=search_func,
     description=(
-        "Cerca informazioni pubbliche su persone o aziende con SerpAPI."
+        "Search public informations with GoogleSerperAPI."
     )
 )
