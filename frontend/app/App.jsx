@@ -8,7 +8,7 @@ export default function App({ user }) {
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("person"); // non più usato nell'API, ma lasciato per compatibilità UI
   const [context, setContext] = useState("");
-  const [language, setLanguage] = useState("it-IT");
+  const [language, setLanguage] = useState("en-US");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -20,6 +20,8 @@ export default function App({ user }) {
     setError("");
     setResult(null);
     setShowResult(false);
+    let apiResult = null;
+    let apiError = null;
     try {
       const response = await fetch(`${BACKEND_URL}/analyze`, {
         method: "POST",
@@ -27,14 +29,20 @@ export default function App({ user }) {
         body: JSON.stringify({ subject, context, language })
       });
       if (!response.ok) throw new Error("Errore API: " + response.status);
-      const res = await response.json();
-      setResult(res);
-      setTimeout(() => setShowResult(true), 100);
+      apiResult = await response.json();
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      apiError = err.message;
     }
+    // Timeout di 15 secondi dopo la chiamata API
+    setTimeout(() => {
+      setLoading(false);
+      if (apiError) {
+        setError(apiError);
+      } else {
+        setResult(apiResult);
+        setShowResult(true);
+      }
+    }, 15000);
   };
 
   return (
@@ -51,7 +59,7 @@ export default function App({ user }) {
         <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} required />
 
         <label htmlFor="context">Affina la ricerca [facoltativo]:</label>
-        <textarea id="context" value={context} onChange={e => setContext(e.target.value)} required />
+        <textarea id="context" value={context} onChange={e => setContext(e.target.value)}/>
 
         <label htmlFor="language">Lingua:</label>
         <select id="language" value={language} onChange={e => setLanguage(e.target.value)}>
@@ -62,7 +70,16 @@ export default function App({ user }) {
           <option value="es-ES">Español</option>
         </select>
 
-        <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? "Analisi in corso..." : "Analizza"}</button>
+        <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? (
+          <span style={{display: 'inline-flex', alignItems: 'center'}}>
+            Analisi in corso...
+            <svg style={{marginLeft: 8}} width="18" height="18" viewBox="0 0 50 50" className="spinner" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite" />
+              </circle>
+            </svg>
+          </span>
+        ) : "Analizza"}</button>
       </form>
       <div id="result">
         {error && <span style={{ color: "red" }}>Errore: {error}</span>}
