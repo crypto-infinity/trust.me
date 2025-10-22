@@ -3,11 +3,11 @@
 Backend FastAPI + LangChain per orchestrazione agentica della valutazione della fiducia.
 
 ## Struttura agenti
-- **SearchAgent**: Ricerca profili pubblici (SerpAPI)
+- **SearchAgent**: Ricerca profili pubblici (Serper)
 - **ScraperAgent**: Estrazione dati da link
 - **VerifierAgent**: Verifica coerenza e attendibilità (LLM)
 - **TrustScorerAgent**: Calcolo score di fiducia (LLM)
-- **HumanCheckAgent**: Validazione umana opzionale
+- **HumanCheckAgent**: Validazione umana opzionale - non implementata
 - **ReportAgent**: Generazione report markdown
 
 ## Avvio locale
@@ -22,6 +22,5 @@ Backend FastAPI + LangChain per orchestrazione agentica della valutazione della 
    ```
 
 ## Note
-- Richiede chiavi OpenAI e SerpAPI
-- Per scraping avanzato, aggiungi Scrapy o altri tool
-- Per produzione, configura SQL Server e OAuth
+- Richiede chiavi Azure OpenAI (con un LLM e un modello di embeddings configurato) e Serper
+
