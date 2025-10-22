@@ -47,21 +47,6 @@ Trust.me è una piattaforma progettata per valutare, verificare e presentare inf
 	npm run dev
 	```
 
-### Infrastruttura (IaC)
-
-1. Posizionarsi nella cartella `iac`:
-	```powershell
-	cd iac
-	```
-2. Inizializzare Terraform:
-	```powershell
-	terraform init
-	```
-3. Applicare la configurazione:
-	```powershell
-	terraform apply
-	```
-
 ## Struttura del progetto
 
 - `backend/` — API, logica di business, agenti
@@ -81,4 +66,3 @@ Trust.me è una piattaforma progettata per valutare, verificare e presentare inf
 ## Licenza
 
 Questo progetto è distribuito sotto licenza MIT. Vedi il file LICENSE per dettagli.
-# trust.me
