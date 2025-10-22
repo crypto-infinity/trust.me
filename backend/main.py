@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from collections import defaultdict
 import logging
 
-from config import __VERSION__, __DEBUG_LEVEL__
+from config import __VERSION__, __DEBUG_LEVEL__, __N_VALIDATION_RETRIES__
 
 # Load env variables
 load_dotenv()
@@ -82,6 +82,7 @@ async def inference(request: AnalysisRequest):
     logging.info("Beginning scoring of subject...")
 
     checked = False
+    counter = 0
     checked_data = None
     score = 0
     details = None
@@ -131,19 +132,33 @@ async def inference(request: AnalysisRequest):
                 verification_log["whys"].append(
                     checked_data["error_details"]["whys"]
                 )
+                if counter > __N_VALIDATION_RETRIES__:
+                    checked = None
+                    break
+                else:
+                    counter += 1
+
+        if not checked:
+            logging.warning("Validation failed or exceeded timeout.")
+            return AnalysisResponse(
+                trust_score=0.0,
+                details=("Validazione non disponibile o "
+                         "nessun risultato prodotto."
+                         )
+            )
 
         logging.info("Beginning Scoring.")
         score, details = await ScorerAgent().run(
             verification_log, request.language
         )
-        
+
         if not details or not score:
             logging.warning("Scoring failed or returned no details.")
             return AnalysisResponse(
                 trust_score=0.0,
                 details="Scoring non disponibile o nessun dettaglio prodotto."
             )
-        
+
         logging.info("Analysis complete.")
         return AnalysisResponse(trust_score=score, details=details)
     except Exception as e:
