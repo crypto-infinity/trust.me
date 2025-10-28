@@ -1,69 +1,69 @@
 # Trust.me
 
-Le persone e le organizzazioni spendono una significativa quantità di tempo ed energie per determinare l'affidabilità delle proprie relazioni (personali e professionali), a volte senza la visione o la comprensione completa delle dinamiche in gioco per gestire correttamente questo  processo: questo porta a decisioni subottimali, partnership fallimentari e costi emotivi ed economici importanti, che producono risultati negativi quantificabili (ad esempio, un’azienda che gode di bassa fiducia può sottoperformare le altre).
+People and organizations spend a significant amount of time and energy determining the trustworthiness of their relationships (personal and professional), sometimes without full visibility or understanding of the dynamics at play to properly manage this process: this leads to suboptimal decisions, failed partnerships, and important emotional and economic costs, resulting in quantifiable negative outcomes (for example, a company with low trust may underperform compared to others).
 
-Per ulteriori informazioni, vedi https://github.com/crypto-infinity/trust.me/tree/main/docs.
+For more information, see https://github.com/crypto-infinity/trust.me/tree/main/docs.
 
-Trust.me è una piattaforma progettata proprio per valutare, verificare e presentare informazioni affidabili tramite un sistema di scoring automatizzato e agenti intelligenti, supportando l'essere umano nel processo di validazione, lasciando lui completa governance. Il progetto è composto da un backend Python (FastAPI) e un frontend React.
+Trust.me is a platform designed to evaluate, verify, and present reliable information through an automated scoring system and intelligent agents, supporting humans in the validation process while leaving them with full governance. The project consists of a Python backend (FastAPI) and a React frontend.
 
-## Architettura
+## Architecture
 
-- **Backend**: Python, FastAPI, LangChain, agenti modulari per scraping, verifica, scoring e ricerca.
-- **Frontend**: React, Vite, interfaccia moderna per la presentazione dei risultati e autenticazione - *attualmente in sviluppo*.
+- **Backend**: Python, FastAPI, LangChain, modular agents for scraping, verification, scoring, and search.
+- **Frontend**: React, Vite, modern interface for presenting results and authentication - *currently under development*.
 
-## Funzionalità principali
+## Main Features
 
-- **Scraping e raccolta dati**: Estrazione automatica di informazioni da fonti web.
-- **Verifica e scoring**: Valutazione dell'affidabilità tramite agenti e algoritmi personalizzati.
-- **Interfaccia utente**: Visualizzazione dei risultati, login e gestione utenti.
+- **Scraping and data collection**: Automatic extraction of information from web sources.
+- **Verification and scoring**: Reliability assessment through agents and custom algorithms.
+- **User interface**: Results visualization, login, and user management.
 
-## Avvio rapido
+## Quick Start
 
 ### Backend
 
-1. Posizionarsi nella cartella `backend`:
+1. Go to the `backend` folder:
 	```powershell
 	cd backend
 	```
-2. Installare le dipendenze:
+2. Install dependencies:
 	```powershell
 	pip install -r requirements.txt
 	```
-3. Avviare il server:
+3. Start the server:
 	```powershell
 	uvicorn main:app --reload
 	```
 
 ### Frontend
 
-1. Posizionarsi nella cartella `frontend`:
+1. Go to the `frontend` folder:
 	```powershell
 	cd frontend
 	```
-2. Installare le dipendenze:
+2. Install dependencies:
 	```powershell
 	npm install
 	```
-3. Avviare l'applicazione:
+3. Start the application:
 	```powershell
 	npm run dev
 	```
 
-## Struttura del progetto
+## Project Structure
 
-- `backend/` — API, logica di business, agenti
-- `frontend/` — Interfaccia utente React
-- `service/` — Dockerfile e servizi ausiliari
-- `tests/` — Test automatici (unit, integration, e2e)
-- `docs/` — Documentazione, studi e materiali di progetto
+- `backend/` — API, business logic, agents
+- `frontend/` — React user interface
+- `service/` — Dockerfile and auxiliary services
+- `tests/` — Automated tests (unit, integration, e2e)
+- `docs/` — Documentation, studies, and project materials
 
-## Contribuire - se desiderate!
+## Contributing - if you wish!
 
-1. Fork del repository
-2. Creare un branch feature (`git checkout -b feature/NomeFeature`)
-3. Effettuare commit e push
-4. Aprire una Pull Request
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/FeatureName`)
+3. Commit and push your changes
+4. Open a Pull Request
 
-## Licenza
+## License
 
-Questo progetto è distribuito sotto licenza MIT. Vedi il file LICENSE per dettagli.
+This project is distributed under the MIT license. See the LICENSE file for details.
