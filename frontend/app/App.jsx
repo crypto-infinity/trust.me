@@ -4,7 +4,7 @@ import "../styles.css";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `https://trustme-backend.azurewebsites.net`;
 import { __VERSION__ } from "./config";
 
-export default function App({ user }) {
+export default function App() {
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("person"); // non più usato nell'API, ma lasciato per compatibilità UI
   const [context, setContext] = useState("");
@@ -47,21 +47,17 @@ export default function App({ user }) {
 
   return (
     <div className={`container${loading ? " loading" : ""}`}> 
-      <h1>Trust.me Analyzer v.{__VERSION__}</h1>
-      <h2>AI-powered trust score calculator</h2>
-      <div style={{marginBottom: 16, fontSize: 15, color: '#555', textAlign: 'center'}}>
-        Benvenuto, <b>{user && user.name ? user.name : ""}</b>
-      </div>
+      <h1>Trust.me Analyzer</h1>
       <hr></hr>
-      <h4>Inserisci i dati della persona o dell'azienda da valutare:</h4>
+      <h4>TrustMe: automatic agentic trust validation for online identities - {__VERSION__}</h4>
       <form id="analyze-form" onSubmit={handleSubmit} className={loading ? "form-loading" : ""}>
-        <label htmlFor="subject">Soggetto:</label>
+        <label htmlFor="subject">Subject:</label>
         <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} required />
 
-        <label htmlFor="context">Affina la ricerca [facoltativo]:</label>
+        <label htmlFor="context">Context [optional]:</label>
         <textarea id="context" value={context} onChange={e => setContext(e.target.value)}/>
 
-        <label htmlFor="language">Lingua:</label>
+        <label htmlFor="language">Response language:</label>
         <select id="language" value={language} onChange={e => setLanguage(e.target.value)}>
           <option value="it-IT">Italiano</option>
           <option value="en-US">English</option>
@@ -72,14 +68,14 @@ export default function App({ user }) {
 
         <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? (
           <span style={{display: 'inline-flex', alignItems: 'center'}}>
-            Analisi in corso...
+            Analisys in progress...
             <svg style={{marginLeft: 8}} width="18" height="18" viewBox="0 0 50 50" className="spinner" xmlns="http://www.w3.org/2000/svg">
               <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
                 <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite" />
               </circle>
             </svg>
           </span>
-        ) : "Analizza"}</button>
+        ) : "Analyze"}</button>
       </form>
       <div id="result">
         {error && <span style={{ color: "red" }}>Errore: {error}</span>}

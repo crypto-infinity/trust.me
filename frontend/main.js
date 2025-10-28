@@ -1,15 +1,3 @@
-// Login con Google (mock)
-document.getElementById('google-login').onclick = function() {
-    alert('Login con Google (mock): implementa OAuth2 lato backend per produzione.');
-    // Qui dovresti reindirizzare verso il backend per l'autenticazione Google
-};
-
-// Login con Microsoft (mock)
-document.getElementById('microsoft-login').onclick = function() {
-    alert('Login con Microsoft (mock): implementa OAuth2 lato backend per produzione.');
-    // Qui dovresti reindirizzare verso il backend per l'autenticazione Microsoft
-};
-
 // Parametrizzazione URL backend
 const BACKEND_PORT = window.BACKEND_PORT || (typeof process !== 'undefined' && process.env && process.env.PORT) || 8000;
 const BACKEND_URL = window.BACKEND_URL || `http://localhost:${BACKEND_PORT}`;
