@@ -10,6 +10,8 @@ from langchain_openai import AzureOpenAIEmbeddings
 
 from langchain.tools import Tool
 from langchain_community.utilities import GoogleSerperAPIWrapper
+from langsmith import Client
+
 from config import __TOPK_RESULTS__
 
 load_dotenv()
@@ -35,7 +37,7 @@ embeddings = AzureOpenAIEmbeddings(
 )
 
 # Initializes Langsmith Client
-# langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
+langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
 
 
 # Inizializza GoogleSerperAPIWrapper
