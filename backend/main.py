@@ -25,7 +25,13 @@ logging.basicConfig(
 
 
 # FastAPI Setup
-app = FastAPI(title="Trust.me API", version=__VERSION__)
+app = FastAPI(
+    title="Trust.me API",
+    version=__VERSION__,
+    description=(
+        "TrustMe: automatic agentic trust validation for online identities"
+    )
+)
 
 
 # CORS setup

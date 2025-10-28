@@ -32,7 +32,7 @@ class ScraperAgent:
                 r"(/[\w\-\.~:/?#\[\]@!$&'\"()*+,;=%]*)?$"
             ),
             url,
-            re.IGNORECASE,
+            re.IGNORECASE
         )
 
     async def fetch_site(self, url, headers, timeout=__API_TIMEOUT__):

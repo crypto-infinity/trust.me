@@ -4,8 +4,9 @@ Search Agents: enhances and gets search results from user query.
 """
 
 import logging
-from langchain_setup import llm
+import json
 
+from langchain_setup import llm
 from langchain_setup import search_tool
 from .prompt_templates import QUERY_DEFINER_PROMPT
 from config import __TOPK_RESULTS__
@@ -27,11 +28,12 @@ class SearchAgent:
                 top_k=__TOPK_RESULTS__
             )
         )
-        # Expecting a JSON list as output
-        import json
+
         response_content = getattr(
             response, 'content', str(response)
         ).strip()
+
+        # JSON Parsing
         try:
             queries = json.loads(response_content)
             if isinstance(queries, list):
@@ -39,7 +41,7 @@ class SearchAgent:
             else:
                 return [str(queries)]
         except Exception as e:
-            print(f"Errore parsing JSON define_queries: {e}")
+            print(f"Parsing error JSON define_queries: {e}")
             return []
 
     async def run(
