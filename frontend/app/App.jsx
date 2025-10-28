@@ -68,7 +68,7 @@ export default function App() {
 
         <button type="submit" disabled={loading} className={`animated-btn${loading ? " btn-loading" : ""}`}>{loading ? (
           <span style={{display: 'inline-flex', alignItems: 'center'}}>
-            Analisys in progress...
+            Analysis in progress...
             <svg style={{marginLeft: 8}} width="18" height="18" viewBox="0 0 50 50" className="spinner" xmlns="http://www.w3.org/2000/svg">
               <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="31.4 31.4" strokeLinecap="round">
                 <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite" />
