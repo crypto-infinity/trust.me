@@ -41,7 +41,6 @@ VERIFIER_PROMPT = PromptTemplate(
         " and to find additional information for a more complete verification."
         "Do not include the subject, subject type, or the context previously "
         "provided by the user in suggested_retry.\n"
-        "Ignore all non-informative content during the process."
         "Example: {{\"whys\": [\"Reason 1\", \"Reason 2\"], "
         "\"suggested_retry\": \"keywords for new search\"}}. "
         "Reply in language {language}."
