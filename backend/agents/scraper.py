@@ -47,11 +47,8 @@ class ScraperAgent:
             str | None: Extracted text or None if failed.
         """
 
-        elements_to_filter = [
-            "script", "style", "footer", "header", "nav", "aside", "form",
-            "noscript", "iframe", "svg", "canvas", "code", "pre", "meta",
-            "link", "button", "input"
-        ]
+        elements_to_filter = ['script', 'style', 'footer',
+                              'header', 'nav', 'aside', 'form', 'noscript']
 
         if timeout is None:
             timeout = __API_TIMEOUT__
@@ -94,7 +91,7 @@ class ScraperAgent:
         text = re.sub(r"([^\w\s]{2,}|_{2,}|-{2,})", " ", text)
         text = re.sub(r"\s+", " ", text)
         sentences = re.split(r"(?<=[.!?])\s+", text)
-        
+
         for s in sentences:
             cleaned = "".join(
                 c for c in s if 32 <= ord(c) <= 126 or c in "\n\r\t"
