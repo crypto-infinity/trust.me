@@ -9,7 +9,7 @@ import json
 from langchain_setup import llm
 from langchain_setup import search_tool
 from .prompt_templates import QUERY_DEFINER_PROMPT
-from config import __TOPK_RESULTS__
+from config import __N_QUERIES__
 
 
 class SearchAgent:
@@ -25,7 +25,7 @@ class SearchAgent:
                 name=name,
                 context=context,
                 language=language,
-                top_k=__TOPK_RESULTS__
+                top_k=__N_QUERIES__
             )
         )
 
