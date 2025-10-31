@@ -46,8 +46,16 @@ class ScraperAgent:
         Returns:
             str | None: Extracted text or None if failed.
         """
+
+        elements_to_filter = [
+            "script", "style", "footer", "header", "nav", "aside", "form",
+            "noscript", "iframe", "svg", "canvas", "code", "pre", "meta",
+            "link", "button", "input"
+        ]
+
         if timeout is None:
             timeout = __API_TIMEOUT__
+
         try:
             async with aiohttp.ClientSession() as session:
                 logging.debug("ClientSession spawned.")
@@ -58,9 +66,11 @@ class ScraperAgent:
                 ) as resp:
                     html = await resp.text()
                     soup = BeautifulSoup(html, "html.parser")
-                    for script in soup(["script", "style"]):
-                        script.decompose()
+                    for tag in elements_to_filter:
+                        for element in soup.find_all(tag):
+                            element.decompose()
                     return soup.get_text(separator=" ", strip=True)
+
         except Exception as e:
             logging.warning(f"Skipping site: {e}")
             return None
@@ -84,6 +94,7 @@ class ScraperAgent:
         text = re.sub(r"([^\w\s]{2,}|_{2,}|-{2,})", " ", text)
         text = re.sub(r"\s+", " ", text)
         sentences = re.split(r"(?<=[.!?])\s+", text)
+        
         for s in sentences:
             cleaned = "".join(
                 c for c in s if 32 <= ord(c) <= 126 or c in "\n\r\t"

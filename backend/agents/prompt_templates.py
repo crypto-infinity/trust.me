@@ -12,7 +12,7 @@ QUERY_DEFINER_PROMPT = PromptTemplate(
         "(e.g., 'OpenAI', 'Gabriele Scorpaniti') and some context. "
         "Your task is to generate a list of search queries, in the specified "
         "language and optimized for Serper Api, tailored to the type of the "
-        "input provided. Generate at least {top_k} queries.\n\n"
+        "input provided. Generate {top_k} queries.\n\n"
         "Generate one query string ready to be used with Serper Api. Queries "
         "should include Boolean operators, quotation marks for exact phrases,"
         "and specific "
