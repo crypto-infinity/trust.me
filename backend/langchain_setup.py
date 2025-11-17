@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 from pydantic import SecretStr
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import AzureOpenAIEmbeddings
-
-from langchain.tools import Tool
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langsmith import Client
 
@@ -37,22 +35,13 @@ embeddings = AzureOpenAIEmbeddings(
 )
 
 # Initializes Langsmith Client
-langsmith_client = Client(api_key=os.getenv("LANGSMITH_API_KEY"))
+langsmith_client = Client(
+    api_key=os.getenv("LANGSMITH_API_KEY")
+)
 
 
 # Inizializza GoogleSerperAPIWrapper
-google_search = GoogleSerperAPIWrapper(k=__TOPK_RESULTS__)
-
-
-def search_func(query):
-    result = google_search.results(query)
-    return result
-
-
-search_tool = Tool(
-    name="search",
-    func=search_func,
-    description=(
-        "Search public informations with GoogleSerperAPI."
-    )
+google_search = GoogleSerperAPIWrapper(
+    serper_api_key=os.getenv("SERPER_API_KEY"),
+    k=__TOPK_RESULTS__
 )

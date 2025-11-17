@@ -2,7 +2,7 @@
 Prompt templates for TrustME agents.
 """
 
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 
 QUERY_DEFINER_PROMPT = PromptTemplate(
     input_variables=["name", "language", "context", "top_k"],
