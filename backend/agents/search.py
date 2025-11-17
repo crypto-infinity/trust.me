@@ -7,14 +7,14 @@ import logging
 import json
 
 from langchain_setup import llm
-from langchain_setup import search_tool
+from langchain_setup import google_search
 from .prompt_templates import QUERY_DEFINER_PROMPT
 from config import __N_QUERIES__
 
 
 class SearchAgent:
     def __init__(self):
-        self.search_tool = search_tool
+        self.google_search = google_search
         self.llm = llm
 
     def define_queries(self, name, context, language="en-US") -> list[str]:
@@ -54,7 +54,7 @@ class SearchAgent:
 
         for query in queries:
             logging.info(f"Search query: {query}")
-            search_result = self.search_tool.run(query)
+            search_result = self.google_search.results(query)
 
             organic = search_result.get("organic", [])
 
