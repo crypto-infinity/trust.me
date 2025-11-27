@@ -3,14 +3,18 @@
 Main FastAPI application for Trust.me API.
 """
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from agents.search import SearchAgent
 from agents.verifier import VerifierAgent
 from agents.scorer import ScorerAgent
 from agents.scraper import ScraperAgent
-from pydantic import BaseModel
+from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
+from pydantic import BaseModel, AnyHttpUrl, computed_field
+from pydantic_settings import BaseSettings
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 from collections import defaultdict
 import logging
 
@@ -24,13 +28,64 @@ logging.basicConfig(
 )
 
 
+class Settings(BaseSettings):
+    BACKEND_CORS_ORIGINS: list[str | AnyHttpUrl] = ['http://localhost:8000']
+    OPENAPI_CLIENT_ID: str = ""
+    APP_CLIENT_ID: str = ""
+    TENANT_ID: str = ""
+    SCOPE_DESCRIPTION: str = "user_impersonation"
+
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+        case_sensitive = True,
+        extra = "allow"
+
+    @computed_field
+    @property
+    def SCOPE_NAME(self) -> str:
+        return f'api://{self.APP_CLIENT_ID}/{self.SCOPE_DESCRIPTION}'
+
+    @computed_field
+    @property
+    def SCOPES(self) -> dict:
+        return {
+            self.SCOPE_NAME: self.SCOPE_DESCRIPTION,
+        }
+
+
+settings = Settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Load OpenID config on startup.
+    """
+    await azure_scheme.openid_config.load_config()
+    yield
+
+
+azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
+    app_client_id=settings.APP_CLIENT_ID,
+    tenant_id=settings.TENANT_ID,
+    scopes=settings.SCOPES,
+)
+
+
 # FastAPI Setup
 app = FastAPI(
     title="Trust.me API",
     version=__VERSION__,
     description=(
         "TrustMe: automatic agentic trust validation for online identities"
-    )
+    ),
+    swagger_ui_oauth2_redirect_url='/oauth2-redirect',
+    swagger_ui_init_oauth={
+        'usePkceWithAuthorizationCodeGrant': True,
+        'clientId': settings.OPENAPI_CLIENT_ID,
+    },
+    lifespan=lifespan
 )
 
 
@@ -172,7 +227,7 @@ async def inference(request: AnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/health")
+@app.get("/health", dependencies=[Security(azure_scheme)])
 def health():
     """
     Health check endpoint.
