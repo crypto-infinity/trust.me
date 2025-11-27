@@ -125,7 +125,7 @@ class AnalysisResponse(BaseModel):
     details: str  # string representing the LLM details based on search results
 
 
-@app.post("/analyze", response_model=AnalysisResponse)
+@app.post("/analyze", response_model=AnalysisResponse, dependencies=[Security(azure_scheme)])
 async def analyze(request: AnalysisRequest):
     return await inference(request)
 
@@ -228,7 +228,7 @@ async def inference(request: AnalysisRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/health", dependencies=[Security(azure_scheme)])
+@app.get("/health")
 def health():
     """
     Health check endpoint.
