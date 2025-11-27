@@ -1,18 +1,59 @@
 import React, { useState } from "react";
+import { PublicClientApplication } from "@azure/msal-browser";
+// Configurazione MSAL
+const msalConfig = {
+  auth: {
+    clientId: import.meta.env.VITE_APP_CLIENT_ID || "", // Sostituisci con il tuo clientId
+    authority: "https://login.microsoftonline.com/" + import.meta.env.VITE_TENANT_ID, // Modifica se usi tenant specifico
+    redirectUri: window.location.origin,
+  },
+};
+
+const msalInstance = new PublicClientApplication(msalConfig);
 import "../styles.css";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `https://trustme-backend.azurewebsites.net`;
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || window.BACKEND_URL || `https://trustme-backend-dev.azurewebsites.net`;
 import { __VERSION__ } from "./config";
 
 export default function App() {
   const [subject, setSubject] = useState("");
-  const [type, setType] = useState("person"); // non più usato nell'API, ma lasciato per compatibilità UI
+  const [type, setType] = useState("person");
   const [context, setContext] = useState("");
   const [language, setLanguage] = useState("en-US");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [showResult, setShowResult] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      await msalInstance.initialize();
+      const loginResponse = await msalInstance.loginPopup({ scopes: ["openid", "profile", "email"] });
+      const account = loginResponse.account;
+      setIsAuthenticated(true);
+      setUserName(account.name || account.username);
+      // Recupera il token
+      const tokenResponse = await msalInstance.acquireTokenSilent({
+        scopes: ["openid", "profile", "email"],
+        account,
+      });
+      const token = tokenResponse.accessToken;
+      localStorage.setItem("auth_token", token);
+    } catch (error) {
+      // Fallback: loginPopup se acquireTokenSilent fallisce
+      try {
+        const tokenResponse = await msalInstance.acquireTokenPopup({ scopes: ["openid", "profile", "email"] });
+        const token = tokenResponse.accessToken;
+        localStorage.setItem("auth_token", token);
+        setIsAuthenticated(true);
+        setUserName(tokenResponse.account.name || tokenResponse.account.username);
+      } catch (err) {
+        alert("Login fallito: " + err.message);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,9 +64,13 @@ export default function App() {
     let apiResult = null;
     let apiError = null;
     try {
+      // Recupera il token da localStorage
+      const token = localStorage.getItem("auth_token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const response = await fetch(`${BACKEND_URL}/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ subject, context, language })
       });
       if (!response.ok) throw new Error("Errore API: " + response.status);
@@ -33,7 +78,6 @@ export default function App() {
     } catch (err) {
       apiError = err.message;
     }
-    // Timeout di 15 secondi dopo la chiamata API
     setTimeout(() => {
       setLoading(false);
       if (apiError) {
@@ -45,11 +89,26 @@ export default function App() {
     }, 15000);
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="container">
+        <h1>Trust.me Analyzer</h1>
+        <hr></hr>
+        <div style={{ marginBottom: "1rem" }}>
+          <button onClick={handleLogin}>Login con Microsoft</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`container${loading ? " loading" : ""}`}> 
       <h1>Trust.me Analyzer</h1>
       <hr></hr>
       <h4>TrustMe: automatic agentic trust validation for online identities - {__VERSION__}</h4>
+      <div style={{ marginBottom: "1rem" }}>
+        <span>Benvenuto, {userName}!</span>
+      </div>
       <form id="analyze-form" onSubmit={handleSubmit} className={loading ? "form-loading" : ""}>
         <label htmlFor="subject">Subject:</label>
         <input type="text" id="subject" value={subject} onChange={e => setSubject(e.target.value)} required />
