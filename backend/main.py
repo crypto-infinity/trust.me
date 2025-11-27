@@ -70,6 +70,7 @@ azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
     app_client_id=settings.APP_CLIENT_ID,
     tenant_id=settings.TENANT_ID,
     scopes=settings.SCOPES,
+    allow_guest_users=True
 )
 
 
