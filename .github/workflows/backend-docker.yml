@@ -6,7 +6,7 @@ on:
       - 'service/Dockerfile'
       - 'backend/**'
     branches:
-      - main
+      - dev
 
 jobs:
   build-and-push:
@@ -32,4 +32,4 @@ jobs:
           file: ./service/backend_dockerfile
           push: true
           no-cache: true
-          tags: ${{ secrets.AZURECR_REGISTRY }}/trustme-backend:latest
+          tags: ${{ secrets.AZURECR_REGISTRY }}/trustme-backend-dev:latest
