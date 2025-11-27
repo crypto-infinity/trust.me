@@ -36,7 +36,9 @@ export default function App() {
       setUserName(account.name || account.username);
       // Recupera il token
       const tokenResponse = await msalInstance.acquireTokenSilent({
-        scopes: ["openid", "profile", "email", "user_impersonation"],
+        scopes: [
+          "api://" + import.meta.env.VITE_API_CLIENT_ID + "/user_impersonation"
+        ],
         account,
       });
       const token = tokenResponse.accessToken;
@@ -44,7 +46,11 @@ export default function App() {
     } catch (error) {
       // Fallback: loginPopup se acquireTokenSilent fallisce
       try {
-        const tokenResponse = await msalInstance.acquireTokenPopup({ scopes: ["openid", "profile", "email"] });
+        const tokenResponse = await msalInstance.acquireTokenPopup(
+          { scopes: [
+            "api://" + import.meta.env.VITE_API_CLIENT_ID + "/user_impersonation"
+          ] }
+        );
         const token = tokenResponse.accessToken;
         localStorage.setItem("auth_token", token);
         setIsAuthenticated(true);

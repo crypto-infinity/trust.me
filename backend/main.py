@@ -125,7 +125,9 @@ class AnalysisResponse(BaseModel):
     details: str  # string representing the LLM details based on search results
 
 
-@app.post("/analyze", response_model=AnalysisResponse, dependencies=[Security(azure_scheme)])
+@app.post("/analyze",
+          response_model=AnalysisResponse,
+          dependencies=[Security(azure_scheme)])
 async def analyze(request: AnalysisRequest):
     return await inference(request)
 
