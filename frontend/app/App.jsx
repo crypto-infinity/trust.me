@@ -36,7 +36,7 @@ export default function App() {
       setUserName(account.name || account.username);
       // Recupera il token
       const tokenResponse = await msalInstance.acquireTokenSilent({
-        scopes: ["openid", "profile", "email"],
+        scopes: ["openid", "profile", "email", "user_impersonation"],
         account,
       });
       const token = tokenResponse.accessToken;
